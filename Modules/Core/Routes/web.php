@@ -19,7 +19,9 @@ use Modules\Core\Http\Controllers\NotificationController;
 use Modules\Core\Http\Controllers\WorkflowController;
 use Modules\Core\Http\Controllers\SecurityPolicyController;
 use Modules\Core\Http\Controllers\DashboardController;
+use Modules\Core\Http\Controllers\AuditController;
 use Modules\Core\Http\Middleware\CheckPermission;
+
 
 // Grupo de rutas públicas
 Route::prefix('core')->name('core.')->group(function() {
@@ -226,6 +228,17 @@ Route::middleware('auth')->prefix('core')->name('core.')->group(function() {
         Route::get('workflow/transitions/{stateId}', [WorkflowController::class, 'getTransitions'])->name('workflow.transitions');
         Route::post('workflow/execute-transition', [WorkflowController::class, 'executeTransition'])->name('workflow.execute');
     });
+    // Auditoría - Con permisos granulares
+    Route::prefix('audit')->name('audit.')->group(function() {
+        // Rutas de visualización
+        Route::middleware('permission:audit,view')->group(function() {
+            Route::get('', [AuditController::class, 'index'])->name('index');
+            Route::get('dashboard', [AuditController::class, 'dashboard'])->name('dashboard');
+            Route::get('{id}', [AuditController::class, 'show'])->name('show');
+            Route::get('export', [AuditController::class, 'export'])->name('export');
+        });
+    });
+
 });
 
 // API Routes
