@@ -186,6 +186,10 @@ class CoreServiceProvider extends ServiceProvider
             return $user->hasPermission('manage', 'notifications');
         });
 
+        Gate::define('create-notifications', function (User $user) {
+            return $user->canCreateInModule('notifications');
+        });
+
         Gate::define('view-notifications', function (User $user) {
             return $user->canViewModule('notifications');
         });
@@ -216,12 +220,19 @@ class CoreServiceProvider extends ServiceProvider
             return $user->hasPermission('manage', 'security');
         });
 
+        Gate::define('create-security', function (User $user) {
+            return $user->canCreateInModule('security');
+        });
+
         Gate::define('view-security', function (User $user) {
             return $user->canViewModule('security');
         });
 
         Gate::define('edit-security', function (User $user) {
             return $user->canEditInModule('security');
+        });
+        Gate::define('delete-security', function (User $user) {
+            return $user->canDeleteInModule('security');
         });
     }
 

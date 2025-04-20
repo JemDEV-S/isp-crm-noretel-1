@@ -12,14 +12,17 @@
             <a href="{{ route('core.notifications.unread') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fa fa-bell"></i> Ver No Leídas
             </a>
-            @can('create', 'notifications')
+            @if(auth()->user()->canViewModule('notifications'))
             <a href="{{ route('core.notifications.templates') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="fa fa-list"></i> Plantillas
             </a>
+            @endif
+
+            @if(auth()->user()->canCreateInModule('notifications'))
             <a href="{{ route('core.notifications.templates.create') }}" class="btn btn-sm btn-primary">
                 <i class="fa fa-plus"></i> Nueva Plantilla
             </a>
-            @endcan
+            @endif
         </div>
     </div>
     <div class="card-body">
