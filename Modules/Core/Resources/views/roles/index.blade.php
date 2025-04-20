@@ -7,9 +7,11 @@
 <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Listado de Roles</h5>
+        @if(auth()->user()->canCreateInModule('roles'))
         <a href="{{ route('core.roles.create') }}" class="btn btn-primary btn-sm">
             <i class="fa fa-plus"></i> Nuevo Rol
         </a>
+        @endif
     </div>
     <div class="card-body">
         <!-- Filtros -->
@@ -76,15 +78,22 @@
                                 <a href="{{ route('core.roles.show', $role->id) }}" class="btn btn-info" title="Ver">
                                     <i class="fa fa-eye"></i>
                                 </a>
+
+                                @if(auth()->user()->canEditInModule('roles'))
                                 <a href="{{ route('core.roles.edit', $role->id) }}" class="btn btn-primary" title="Editar">
                                     <i class="fa fa-edit"></i>
                                 </a>
+                                @endif
+
+                                @if(auth()->user()->canDeleteInModule('roles'))
                                 <button type="button" class="btn btn-danger" title="Eliminar" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $role->id }}">
                                     <i class="fa fa-trash"></i>
                                 </button>
+                                @endif
                             </div>
-                            
+
                             <!-- Modal para eliminar rol -->
+                            @if(auth()->user()->canDeleteInModule('roles'))
                             <div class="modal fade" id="deleteModal{{ $role->id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $role->id }}" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -94,7 +103,7 @@
                                         </div>
                                         <div class="modal-body">
                                             <p>¿Estás seguro de que deseas eliminar el rol <strong>{{ $role->name }}</strong>?</p>
-                                            
+
                                             @if($role->users->count() > 0)
                                                 <div class="alert alert-warning">
                                                     <i class="fa fa-exclamation-triangle"></i> Este rol está asignado a {{ $role->users->count() }} usuario(s). Debes quitar el rol de estos usuarios antes de eliminarlo.
@@ -114,6 +123,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                         </td>
                     </tr>
                     @empty

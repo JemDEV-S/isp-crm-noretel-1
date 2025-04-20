@@ -85,16 +85,16 @@ Route::middleware('auth')->prefix('core')->name('core.')->group(function() {
 
     // Gestión de roles y permisos - Con permisos granulares
     Route::prefix('roles')->name('roles.')->group(function() {
-        // Rutas de visualización
-        Route::middleware('permission:roles,view')->group(function() {
-            Route::get('', [RoleController::class, 'index'])->name('index');
-            Route::get('{id}', [RoleController::class, 'show'])->name('show');
-        });
-
         // Rutas de creación
         Route::middleware('permission:roles,create')->group(function() {
             Route::get('create', [RoleController::class, 'create'])->name('create');
             Route::post('', [RoleController::class, 'store'])->name('store');
+        });
+
+        // Rutas de visualización
+        Route::middleware('permission:roles,view')->group(function() {
+            Route::get('', [RoleController::class, 'index'])->name('index');
+            Route::get('{id}', [RoleController::class, 'show'])->name('show');
         });
 
         // Rutas de edición

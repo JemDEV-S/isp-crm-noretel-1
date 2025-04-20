@@ -57,22 +57,22 @@ class UserController extends Controller
         $search = $request->get('search');
         $status = $request->get('status');
         $perPage = $request->get('per_page', 10);
-        
+
         $query = $this->userRepository->query();
-        
+
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
-        
+
         if ($status) {
             $query->where('status', $status);
         }
-        
+
         $users = $query->paginate($perPage);
-        
+
         return view('core::users.index', compact('users', 'search', 'status'));
     }
 
@@ -94,13 +94,10 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $data = $request->validated();
-        
-        // Hashear la contraseña
-        $data['password'] = Hash::make($data['password']);
-        
+
         // Crear usuario
         $user = $this->userRepository->create($data);
-        
+
         // Asignar roles si se especificaron
         if ($request->has('roles')) {
             foreach ($request->roles as $roleId) {
@@ -112,7 +109,7 @@ class UserController extends Controller
                 );
             }
         }
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -123,7 +120,7 @@ class UserController extends Controller
             null,
             $user->toArray()
         );
-        
+
         return redirect()->route('core.users.index')
             ->with('success', 'Usuario creado correctamente.');
     }
@@ -136,13 +133,13 @@ class UserController extends Controller
     public function show($id)
     {
         $user = $this->userRepository->find($id);
-        
+
         // Obtener logs de auditoría del usuario
         $logs = AuditLog::where('user_id', $id)
             ->orderBy('action_date', 'desc')
             ->limit(50)
             ->get();
-            
+
         return view('core::users.show', compact('user', 'logs'));
     }
 
@@ -156,7 +153,7 @@ class UserController extends Controller
         $user = $this->userRepository->find($id);
         $roles = $this->roleRepository->getActiveRoles();
         $userRoles = $user->roles->pluck('id')->toArray();
-        
+
         return view('core::users.edit', compact('user', 'roles', 'userRoles'));
     }
 
@@ -170,20 +167,20 @@ class UserController extends Controller
     {
         $user = $this->userRepository->find($id);
         $data = $request->validated();
-        
-        // Si se proporciona una nueva contraseña, hashearla
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } else {
-            unset($data['password']);
-        }
-        
+
+        // // Si se proporciona una nueva contraseña, hashearla
+        // if (!empty($data['password'])) {
+        //     $data['password'] = Hash::make($data['password']);
+        // } else {
+        //     unset($data['password']);
+        // }
+
         // Guardar datos anteriores para auditoría
         $oldData = $user->toArray();
-        
+
         // Actualizar usuario
         $this->userRepository->update($id, $data);
-        
+
         // Actualizar roles si se especificaron
         if ($request->has('roles')) {
             // Eliminar roles actuales
@@ -195,7 +192,7 @@ class UserController extends Controller
                     $request->ip()
                 );
             }
-            
+
             // Asignar nuevos roles
             foreach ($request->roles as $roleId) {
                 $this->permissionService->assignRoleToUser(
@@ -206,7 +203,7 @@ class UserController extends Controller
                 );
             }
         }
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -217,7 +214,7 @@ class UserController extends Controller
             $oldData,
             $user->fresh()->toArray()
         );
-        
+
         return redirect()->route('core.users.index')
             ->with('success', 'Usuario actualizado correctamente.');
     }
@@ -231,19 +228,19 @@ class UserController extends Controller
     public function destroy($id, Request $request)
     {
         $user = $this->userRepository->find($id);
-        
+
         // No permitir eliminar el propio usuario
         if ($id == Auth::id()) {
             return redirect()->route('core.users.index')
                 ->with('error', 'No puedes eliminar tu propio usuario.');
         }
-        
+
         // Guardar datos para auditoría
         $userData = $user->toArray();
-        
+
         // Eliminar usuario
         $this->userRepository->delete($id);
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -254,7 +251,7 @@ class UserController extends Controller
             $userData,
             null
         );
-        
+
         return redirect()->route('core.users.index')
             ->with('success', 'Usuario eliminado correctamente.');
     }
@@ -268,10 +265,10 @@ class UserController extends Controller
     public function activate($id, Request $request)
     {
         $user = $this->userRepository->find($id);
-        
+
         // Actualizar estado
         $this->userRepository->update($id, ['status' => 'active']);
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -282,7 +279,7 @@ class UserController extends Controller
             ['status' => $user->status],
             ['status' => 'active']
         );
-        
+
         return redirect()->route('core.users.index')
             ->with('success', 'Usuario activado correctamente.');
     }
@@ -296,16 +293,16 @@ class UserController extends Controller
     public function deactivate($id, Request $request)
     {
         $user = $this->userRepository->find($id);
-        
+
         // No permitir desactivar el propio usuario
         if ($id == Auth::id()) {
             return redirect()->route('core.users.index')
                 ->with('error', 'No puedes desactivar tu propio usuario.');
         }
-        
+
         // Actualizar estado
         $this->userRepository->update($id, ['status' => 'inactive']);
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -316,7 +313,7 @@ class UserController extends Controller
             ['status' => $user->status],
             ['status' => 'inactive']
         );
-        
+
         return redirect()->route('core.users.index')
             ->with('success', 'Usuario desactivado correctamente.');
     }
@@ -329,7 +326,7 @@ class UserController extends Controller
     public function getPermissions(Request $request)
     {
         $permissions = $this->permissionService->getUserPermissions(Auth::id());
-        
+
         return response()->json([
             'success' => true,
             'permissions' => $permissions
