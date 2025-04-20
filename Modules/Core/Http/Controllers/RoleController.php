@@ -49,22 +49,22 @@ class RoleController extends Controller
         $search = $request->get('search');
         $status = $request->get('status');
         $perPage = $request->get('per_page', 10);
-        
+
         $query = $this->roleRepository->query();
-        
+
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
-        
+
         if ($status === '1' || $status === '0') {
             $query->where('active', $status);
         }
-        
+
         $roles = $query->paginate($perPage);
-        
+
         return view('core::roles.index', compact('roles', 'search', 'status'));
     }
 
@@ -76,7 +76,7 @@ class RoleController extends Controller
     {
         // Obtener lista de módulos y acciones disponibles
         $modules = $this->getAvailableModules();
-        
+
         return view('core::roles.create', compact('modules'));
     }
 
@@ -88,7 +88,7 @@ class RoleController extends Controller
     public function store(StoreRoleRequest $request)
     {
         $data = $request->validated();
-        
+
         // Crear rol
         $role = $this->roleRepository->create([
             'name' => $data['name'],
@@ -96,12 +96,12 @@ class RoleController extends Controller
             'active' => $data['active'] ?? false,
             'default_permissions' => $data['default_permissions'] ?? null
         ]);
-        
+
         // Asignar permisos iniciales si se especificaron
         if (!empty($data['permissions'])) {
             $this->roleRepository->syncPermissions($role->id, $this->formatPermissions($data['permissions']));
         }
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -112,7 +112,7 @@ class RoleController extends Controller
             null,
             $role->toArray()
         );
-        
+
         return redirect()->route('core.roles.index')
             ->with('success', 'Rol creado correctamente.');
     }
@@ -125,20 +125,20 @@ class RoleController extends Controller
     public function show($id)
     {
         $role = $this->roleRepository->getRoleWithPermissions($id);
-        
+
         // Obtener usuarios que tienen este rol
         $users = $role->users()->paginate(10);
-        
+
         // Agrupar permisos por módulo para mostrarlos organizados
         $permissionsByModule = [];
-        
+
         foreach ($role->permissions as $permission) {
             if (!isset($permissionsByModule[$permission->module])) {
                 $permissionsByModule[$permission->module] = [];
             }
             $permissionsByModule[$permission->module][] = $permission;
         }
-        
+
         return view('core::roles.show', compact('role', 'users', 'permissionsByModule'));
     }
 
@@ -150,18 +150,18 @@ class RoleController extends Controller
     public function edit($id)
     {
         $role = $this->roleRepository->getRoleWithPermissions($id);
-        
+
         // Obtener lista de módulos y acciones disponibles
         $modules = $this->getAvailableModules();
-        
+
         // Preparar array con permisos actuales para pre-seleccionarlos en el formulario
         $currentPermissions = [];
-        
+
         foreach ($role->permissions as $permission) {
             $key = "{$permission->module}|{$permission->action}";
             $currentPermissions[$key] = true;
         }
-        
+
         return view('core::roles.edit', compact('role', 'modules', 'currentPermissions'));
     }
 
@@ -175,10 +175,10 @@ class RoleController extends Controller
     {
         $role = $this->roleRepository->find($id);
         $data = $request->validated();
-        
+
         // Guardar datos anteriores para auditoría
         $oldData = $role->toArray();
-        
+
         // Actualizar rol
         $this->roleRepository->update($id, [
             'name' => $data['name'],
@@ -186,12 +186,12 @@ class RoleController extends Controller
             'active' => $data['active'] ?? false,
             'default_permissions' => $data['default_permissions'] ?? null
         ]);
-        
+
         // Sincronizar permisos si se especificaron
         if (isset($data['permissions'])) {
             $this->roleRepository->syncPermissions($id, $this->formatPermissions($data['permissions']));
         }
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -202,7 +202,7 @@ class RoleController extends Controller
             $oldData,
             $role->fresh()->toArray()
         );
-        
+
         return redirect()->route('core.roles.index')
             ->with('success', 'Rol actualizado correctamente.');
     }
@@ -216,19 +216,19 @@ class RoleController extends Controller
     public function destroy($id, Request $request)
     {
         $role = $this->roleRepository->find($id);
-        
+
         // Verificar si el rol está en uso
         if ($role->users()->count() > 0) {
             return redirect()->route('core.roles.index')
                 ->with('error', 'No se puede eliminar un rol que está asignado a usuarios.');
         }
-        
+
         // Guardar datos para auditoría
         $roleData = $role->toArray();
-        
+
         // Eliminar rol
         $this->roleRepository->delete($id);
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -239,7 +239,7 @@ class RoleController extends Controller
             $roleData,
             null
         );
-        
+
         return redirect()->route('core.roles.index')
             ->with('success', 'Rol eliminado correctamente.');
     }
@@ -254,16 +254,16 @@ class RoleController extends Controller
     {
         $role = $this->roleRepository->find($id);
         $data = $request->validated();
-        
+
         // Guardar permisos anteriores para auditoría
         $oldPermissions = $role->permissions->toArray();
-        
+
         // Sincronizar permisos
         $this->roleRepository->syncPermissions($id, $this->formatPermissions($data['permissions']));
-        
+
         // Obtener rol actualizado con sus permisos
         $updatedRole = $this->roleRepository->getRoleWithPermissions($id);
-        
+
         // Registrar acción
         AuditLog::register(
             Auth::id(),
@@ -274,7 +274,7 @@ class RoleController extends Controller
             ['permissions' => $oldPermissions],
             ['permissions' => $updatedRole->permissions->toArray()]
         );
-        
+
         return redirect()->route('core.roles.show', $id)
             ->with('success', 'Permisos actualizados correctamente.');
     }
@@ -287,18 +287,18 @@ class RoleController extends Controller
     public function assignToUser(AssignRoleRequest $request)
     {
         $data = $request->validated();
-        
+
         $result = $this->permissionService->assignRoleToUser(
             $data['user_id'],
             $data['role_id'],
             Auth::id(),
             $request->ip()
         );
-        
+
         if (!$result['success']) {
             return back()->with('error', $result['message']);
         }
-        
+
         return back()->with('success', $result['message']);
     }
 
@@ -313,31 +313,31 @@ class RoleController extends Controller
             'user_id' => 'required|exists:users,id',
             'role_id' => 'required|exists:roles,id'
         ]);
-        
+
         $result = $this->permissionService->removeRoleFromUser(
             $request->user_id,
             $request->role_id,
             Auth::id(),
             $request->ip()
         );
-        
+
         if (!$result['success']) {
             return back()->with('error', $result['message']);
         }
-        
+
         return back()->with('success', $result['message']);
     }
 
     /**
      * Get available modules and their actions.
-     * 
+     *
      * @return array
      */
     private function getAvailableModules()
     {
         // En una implementación real, esto podría cargarse desde la base de datos
         // o ser detectado dinámicamente a partir de las clases del sistema
-        
+
         return [
             'users' => [
                 'name' => 'Usuarios',
@@ -389,6 +389,7 @@ class RoleController extends Controller
                 'name' => 'Seguridad',
                 'actions' => [
                     'view' => 'Ver políticas de seguridad',
+                    'create' => 'Crear políticas de seguridad',
                     'edit' => 'Editar políticas de seguridad',
                     'manage' => 'Gestionar seguridad (todos los permisos)'
                 ]
@@ -406,17 +407,17 @@ class RoleController extends Controller
 
     /**
      * Format permissions data for storage.
-     * 
+     *
      * @param array $permissionsData
      * @return array
      */
     private function formatPermissions($permissionsData)
     {
         $formattedPermissions = [];
-        
+
         foreach ($permissionsData as $permissionKey) {
             list($module, $action) = explode('|', $permissionKey);
-            
+
             $formattedPermissions[] = [
                 'module' => $module,
                 'action' => $action,
@@ -424,7 +425,7 @@ class RoleController extends Controller
                 'conditions' => null
             ];
         }
-        
+
         return $formattedPermissions;
     }
 }

@@ -200,16 +200,17 @@ Route::middleware('auth')->prefix('core')->name('core.')->group(function() {
 
     // Políticas de seguridad - Con permisos granulares
     Route::prefix('security')->name('security.')->group(function() {
-        // Rutas de visualización
-        Route::middleware('permission:security,view')->group(function() {
-            Route::get('', [SecurityPolicyController::class, 'index'])->name('index');
-            Route::get('{id}', [SecurityPolicyController::class, 'show'])->name('show');
-        });
 
         // Rutas de creación
         Route::middleware('permission:security,create')->group(function() {
             Route::get('create', [SecurityPolicyController::class, 'create'])->name('create');
             Route::post('', [SecurityPolicyController::class, 'store'])->name('store');
+        });
+
+        // Rutas de visualización
+        Route::middleware('permission:security,view')->group(function() {
+            Route::get('', [SecurityPolicyController::class, 'index'])->name('index');
+            Route::get('{id}', [SecurityPolicyController::class, 'show'])->name('show');
         });
 
         // Rutas de edición
