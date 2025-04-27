@@ -16,6 +16,10 @@
 
     <!-- Estilos personalizados -->
     <link href="{{ asset('modules/core/css/style.css') }}" rel="stylesheet">
+    <!-- Estilos del módulo Customer cuando sea necesario -->
+    @if(request()->segment(1) == 'customer')
+    <link href="{{ asset('modules/customer/css/style.css') }}" rel="stylesheet">
+    @endif
 
     <style>
         :root {
@@ -389,6 +393,47 @@
 
                 <div class="sidebar-divider"></div>
 
+                <!-- Módulo Clientes -->
+                <div class="sidebar-module-group">
+                    <div class="sidebar-module-title">
+                        <i class="fas fa-users"></i> Clientes
+                    </div>
+                    <ul class="nav flex-column">
+                        @if(auth()->user()->canViewModule('customers'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('customer.dashboard') ? 'active' : '' }}"
+                               href="{{ route('customer.dashboard') }}">
+                               <i class="fas fa-chart-line"></i> Dashboard Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('customer.customers.*') ? 'active' : '' }}"
+                               href="{{ route('customer.customers.index') }}">
+                               <i class="fas fa-user-friends"></i> Gestión de Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('customer.documents.*') ? 'active' : '' }}"
+                               href="{{ route('customer.documents.index') }}">
+                               <i class="fas fa-file-alt"></i> Documentos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('customer.interactions.*') ? 'active' : '' }}"
+                               href="{{ route('customer.interactions.index') }}">
+                               <i class="fas fa-comments"></i> Interacciones
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('customer.leads.*') ? 'active' : '' }}"
+                               href="{{ route('customer.leads.index') }}">
+                               <i class="fas fa-user-tag"></i> Leads
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                </div>
+
                 <!-- Módulo Sistema -->
                 <div class="sidebar-module-group">
                     <div class="sidebar-module-title">
@@ -632,6 +677,11 @@
     <!-- Scripts JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    
+    <!-- Script para Chart.js - necesario para dashboard de clientes -->
+    @if(request()->segment(1) == 'users' && request()->segment(2) == '')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @endif
 
     <script>
         // Toggle sidebar on mobile

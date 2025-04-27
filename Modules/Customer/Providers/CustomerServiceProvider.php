@@ -4,6 +4,8 @@ namespace Modules\Customer\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Factory;
+use Illuminate\Support\Facades\Gate;
+use Modules\Core\Entities\User;
 
 class CustomerServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,7 @@ class CustomerServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+        $this->registerGates();
     }
 
     /**
@@ -38,6 +41,7 @@ class CustomerServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->register(RouteServiceProvider::class);
+        $this->app->register(RepositoryServiceProvider::class);
     }
 
     /**
@@ -84,11 +88,93 @@ class CustomerServiceProvider extends ServiceProvider
 
         if (is_dir($langPath)) {
             $this->loadTranslationsFrom($langPath, $this->moduleNameLower);
-            $this->loadJsonTranslationsFrom($langPath);
         } else {
             $this->loadTranslationsFrom(module_path($this->moduleName, 'Resources/lang'), $this->moduleNameLower);
-            $this->loadJsonTranslationsFrom(module_path($this->moduleName, 'Resources/lang'));
         }
+    }
+
+    /**
+     * Register gates for the Customer module.
+     *
+     * @return void
+     */
+    protected function registerGates()
+    {
+        // Gates para gestionar clientes
+        Gate::define('manage-customers', function (User $user) {
+            return $user->hasPermission('manage', 'customers');
+        });
+
+        Gate::define('view-customers', function (User $user) {
+            return $user->canViewModule('customers');
+        });
+
+        Gate::define('create-customers', function (User $user) {
+            return $user->canCreateInModule('customers');
+        });
+
+        Gate::define('edit-customers', function (User $user) {
+            return $user->canEditInModule('customers');
+        });
+
+        Gate::define('delete-customers', function (User $user) {
+            return $user->canDeleteInModule('customers');
+        });
+
+        // Gates para gestionar documentos
+        Gate::define('view-documents', function (User $user) {
+            return $user->canViewModule('customers');
+        });
+
+        Gate::define('upload-documents', function (User $user) {
+            return $user->canCreateInModule('customers');
+        });
+
+        Gate::define('edit-documents', function (User $user) {
+            return $user->canEditInModule('customers');
+        });
+
+        Gate::define('delete-documents', function (User $user) {
+            return $user->canDeleteInModule('customers');
+        });
+
+        // Gates para gestionar interacciones
+        Gate::define('view-interactions', function (User $user) {
+            return $user->canViewModule('customers');
+        });
+
+        Gate::define('create-interactions', function (User $user) {
+            return $user->canCreateInModule('customers');
+        });
+
+        Gate::define('edit-interactions', function (User $user) {
+            return $user->canEditInModule('customers');
+        });
+
+        Gate::define('delete-interactions', function (User $user) {
+            return $user->canDeleteInModule('customers');
+        });
+
+        // Gates para gestionar leads
+        Gate::define('view-leads', function (User $user) {
+            return $user->canViewModule('customers');
+        });
+
+        Gate::define('create-leads', function (User $user) {
+            return $user->canCreateInModule('customers');
+        });
+
+        Gate::define('edit-leads', function (User $user) {
+            return $user->canEditInModule('customers');
+        });
+
+        Gate::define('delete-leads', function (User $user) {
+            return $user->canDeleteInModule('customers');
+        });
+
+        Gate::define('convert-leads', function (User $user) {
+            return $user->canEditInModule('customers');
+        });
     }
 
     /**

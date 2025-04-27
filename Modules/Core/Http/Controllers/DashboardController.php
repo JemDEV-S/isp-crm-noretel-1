@@ -80,7 +80,7 @@ class DashboardController extends Controller
 
         // Obtener estado de componentes del sistema
         $systemComponents = $this->getSystemComponents();
-        \Log::info('Prueba de log');
+       
         return view('core::dashboard', compact(
             'stats',
             'recentActivities',
@@ -116,7 +116,7 @@ class DashboardController extends Controller
         // Notificaciones sin leer
         $unreadNotifications = $this->notificationRepository->getModel()
             ->where('recipient', Auth::user()->email)
-            ->whereRaw("NOT (metadata->>'read' = 'true')")
+            ->whereRaw("NOT (JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.read')) = 'true')")
             ->count();
 
         // Workflows
