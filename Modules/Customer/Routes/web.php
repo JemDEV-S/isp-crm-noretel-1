@@ -12,8 +12,10 @@
 */
 
 use Illuminate\Support\Facades\Route;
+use Modules\Customer\Http\Controllers\AddressController;
 use Modules\Customer\Http\Controllers\CustomerController;
 use Modules\Customer\Http\Controllers\DocumentController;
+use Modules\Customer\Http\Controllers\EmergencyContactController;
 use Modules\Customer\Http\Controllers\InteractionController;
 use Modules\Customer\Http\Controllers\LeadController;
 
@@ -137,6 +139,40 @@ Route::prefix('customer')->middleware(['auth'])->name('customer.')->group(functi
         // Rutas de eliminación
         Route::middleware('permission:customers,delete')->group(function() {
             Route::delete('/{id}', [LeadController::class, 'destroy'])->name('destroy');
+        });
+    });
+    // Address Routes - Add these to your existing routes file
+    Route::prefix('addresses')->name('addresses.')->group(function() {
+        // Routes de creación
+        Route::middleware('permission:customers,create')->group(function() {
+            Route::post('/', [AddressController::class, 'store'])->name('store');
+        });
+        
+        // Routes de edición
+        Route::middleware('permission:customers,edit')->group(function() {
+            Route::put('/{id}', [AddressController::class, 'update'])->name('update');
+        });
+        
+        // Routes de eliminación
+        Route::middleware('permission:customers,delete')->group(function() {
+            Route::delete('/{id}', [AddressController::class, 'destroy'])->name('destroy');
+        });
+    });
+    // Routes para contactos de emergencia - Añadir al archivo web.php
+    Route::prefix('emergencyContacts')->name('emergencyContacts.')->group(function() {
+        // Rutas de creación
+        Route::middleware('permission:customers,create')->group(function() {
+            Route::post('/', [EmergencyContactController::class, 'store'])->name('store');
+        });
+        
+        // Rutas de edición
+        Route::middleware('permission:customers,edit')->group(function() {
+            Route::put('/{id}', [EmergencyContactController::class, 'update'])->name('update');
+        });
+        
+        // Rutas de eliminación
+        Route::middleware('permission:customers,delete')->group(function() {
+            Route::delete('/{id}', [EmergencyContactController::class, 'destroy'])->name('destroy');
         });
     });
 });

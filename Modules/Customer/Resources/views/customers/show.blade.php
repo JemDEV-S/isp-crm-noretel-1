@@ -150,13 +150,20 @@
                             <div>
                                 @can('edit-customers')
                                 <div class="action-btn-group">
-                                    <button class="action-btn" data-bs-toggle="modal" data-bs-target="#editAddressModal{{ $address->id }}" title="Editar">
+                                    <button class="action-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editAddressModal{{ $address->id }}" 
+                                            title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     @if(!$address->is_primary)
-                                    <button class="action-btn" data-bs-toggle="modal" data-bs-target="#deleteAddressModal{{ $address->id }}" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <form action="{{ route('customer.addresses.destroy', $address->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="action-btn" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar esta dirección?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                     @endif
                                 </div>
                                 @endcan
@@ -177,8 +184,72 @@
                                     @csrf
                                     @method('PUT')
                                     <div class="modal-body">
-                                        <!-- Formulario de dirección (similar al de creación) -->
-                                        <!-- (Aquí irían los campos del formulario con los valores actuales) -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="street_{{ $address->id }}" class="form-label">Calle/Avenida <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="street_{{ $address->id }}" name="street" value="{{ $address->street }}" required>
+                                            </div>
+                                            
+                                            <div class="col-md-2 mb-3">
+                                                <label for="number_{{ $address->id }}" class="form-label">Número</label>
+                                                <input type="text" class="form-control" id="number_{{ $address->id }}" name="number" value="{{ $address->number }}">
+                                            </div>
+                                            
+                                            <div class="col-md-2 mb-3">
+                                                <label for="floor_{{ $address->id }}" class="form-label">Piso</label>
+                                                <input type="text" class="form-control" id="floor_{{ $address->id }}" name="floor" value="{{ $address->floor }}">
+                                            </div>
+                                            
+                                            <div class="col-md-2 mb-3">
+                                                <label for="apartment_{{ $address->id }}" class="form-label">Apartamento</label>
+                                                <input type="text" class="form-control" id="apartment_{{ $address->id }}" name="apartment" value="{{ $address->apartment }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-3 mb-3">
+                                                <label for="city_{{ $address->id }}" class="form-label">Ciudad <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="city_{{ $address->id }}" name="city" value="{{ $address->city }}" required>
+                                            </div>
+                                            
+                                            <div class="col-md-3 mb-3">
+                                                <label for="state_{{ $address->id }}" class="form-label">Estado/Provincia <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="state_{{ $address->id }}" name="state" value="{{ $address->state }}" required>
+                                            </div>
+                                            
+                                            <div class="col-md-3 mb-3">
+                                                <label for="postal_code_{{ $address->id }}" class="form-label">Código Postal</label>
+                                                <input type="text" class="form-control" id="postal_code_{{ $address->id }}" name="postal_code" value="{{ $address->postal_code }}">
+                                            </div>
+                                            
+                                            <div class="col-md-3 mb-3">
+                                                <label for="country_{{ $address->id }}" class="form-label">País <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="country_{{ $address->id }}" name="country" value="{{ $address->country }}" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="coordinates_{{ $address->id }}" class="form-label">Coordenadas GPS</label>
+                                                <input type="text" class="form-control" id="coordinates_{{ $address->id }}" name="coordinates" value="{{ $address->coordinates }}" placeholder="Ej: 19.4326,-99.1332">
+                                            </div>
+                                            
+                                            <div class="col-md-6 mb-3">
+                                                <label for="address_type_{{ $address->id }}" class="form-label">Tipo de Dirección <span class="text-danger">*</span></label>
+                                                <select name="address_type" id="address_type_{{ $address->id }}" class="form-select" required>
+                                                    <option value="main" {{ $address->address_type == 'main' ? 'selected' : '' }}>Principal</option>
+                                                    <option value="billing" {{ $address->address_type == 'billing' ? 'selected' : '' }}>Facturación</option>
+                                                    <option value="installation" {{ $address->address_type == 'installation' ? 'selected' : '' }}>Instalación</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="is_primary_{{ $address->id }}" name="is_primary" value="1" {{ $address->is_primary ? 'checked disabled' : '' }}>
+                                            <label class="form-check-label" for="is_primary_{{ $address->id }}">
+                                                Establecer como dirección primaria
+                                            </label>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -188,32 +259,16 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Modal para eliminar dirección -->
-                    <div class="modal fade" id="deleteAddressModal{{ $address->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Eliminar Dirección</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>¿Está seguro de que desea eliminar esta dirección?</p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <form action="{{ route('customer.addresses.destroy', $address->id) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     @endcan
                 @empty
                     <p class="text-center">No hay direcciones registradas</p>
+                    @can('edit-customers')
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                            <i class="fas fa-plus"></i> Agregar dirección
+                        </button>
+                    </div>
+                    @endcan
                 @endforelse
             </div>
         </div>
@@ -221,6 +276,106 @@
 </div>
 
 <div class="row">
+    <!-- Contactos de Emergencia -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-phone-alt"></i> Contactos de Emergencia
+                </div>
+                @can('edit-customers')
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addEmergencyContactModal">
+                    <i class="fas fa-plus"></i> Nuevo Contacto
+                </button>
+                @endcan
+            </div>
+            <div class="card-body">
+                @forelse($customer->emergencyContacts as $contact)
+                    <div class="emergency-contact-card mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6>{{ $contact->name }}</h6>
+                                <p class="mb-1"><strong>Relación:</strong> {{ $contact->relationship }}</p>
+                                <p class="mb-1"><strong>Teléfono:</strong> {{ $contact->phone }}</p>
+                                @if($contact->email)
+                                    <p class="mb-1"><strong>Email:</strong> {{ $contact->email }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                @can('edit-customers')
+                                <div class="action-btn-group">
+                                    <button class="action-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editEmergencyContactModal{{ $contact->id }}" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="{{ route('customer.emergencyContacts.destroy', $contact->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="action-btn" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar este contacto?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal para editar contacto de emergencia -->
+                    @can('edit-customers')
+                    <div class="modal fade" id="editEmergencyContactModal{{ $contact->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Editar Contacto de Emergencia</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form action="{{ route('customer.emergencyContacts.update', $contact->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="name_{{ $contact->id }}" class="form-label">Nombre <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="name_{{ $contact->id }}" name="name" value="{{ $contact->name }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="relationship_{{ $contact->id }}" class="form-label">Relación <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="relationship_{{ $contact->id }}" name="relationship" value="{{ $contact->relationship }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="phone_{{ $contact->id }}" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="phone_{{ $contact->id }}" name="phone" value="{{ $contact->phone }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="email_{{ $contact->id }}" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email_{{ $contact->id }}" name="email" value="{{ $contact->email }}">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endcan
+                @empty
+                    <p class="text-center">No hay contactos de emergencia registrados</p>
+                    @can('edit-customers')
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addEmergencyContactModal">
+                            <i class="fas fa-plus"></i> Agregar contacto
+                        </button>
+                    </div>
+                    @endcan
+                @endforelse
+            </div>
+        </div>
+    </div>
+
     <!-- Documentos -->
     <div class="col-md-6 mb-4">
         <div class="card">
@@ -281,7 +436,9 @@
             </div>
         </div>
     </div>
-    
+</div>
+
+<div class="row">
     <!-- Interacciones -->
     <div class="col-md-6 mb-4">
         <div class="card">
@@ -352,7 +509,7 @@
                 @csrf
                 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <div class="modal-body">
-                    <!-- Formulario de dirección (similar al de creación) -->
+                    <!-- Formulario de dirección -->
                     <div class="row mb-3">
                         <div class="col-md-6 mb-3">
                             <label for="street" class="form-label">Calle/Avenida <span class="text-danger">*</span></label>
@@ -427,5 +584,110 @@
             </form>
         </div>
     </div>
+</div>
 @endcan
+
+<!-- Modal para añadir contacto de emergencia -->
+@can('edit-customers')
+<div class="modal fade" id="addEmergencyContactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Añadir Contacto de Emergencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('customer.emergencyContacts.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="relationship" class="form-label">Relación <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="relationship" name="relationship" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Contacto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endcan
+
+@endsection
+
+@section('js')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== DEBUG: Inicialización de la página de detalle ===');
+        
+        // Verificar si Bootstrap está disponible
+        if (typeof bootstrap !== 'undefined') {
+            console.log('DEBUG: Bootstrap está disponible en la página');
+        } else {
+            console.error('ERROR: Bootstrap no está disponible. Los modales no funcionarán correctamente.');
+        }
+        
+        // Revisar modales
+        const modals = [
+            '#addAddressModal', 
+            '#addEmergencyContactModal'
+        ];
+        
+        modals.forEach(modalId => {
+            const modalElement = document.querySelector(modalId);
+            if (modalElement) {
+                console.log(`DEBUG: Modal ${modalId} encontrado en el DOM`);
+                
+                // Verificar botones que abren este modal
+                const buttons = document.querySelectorAll(`[data-bs-toggle="modal"][data-bs-target="${modalId}"]`);
+                console.log(`DEBUG: Se encontraron ${buttons.length} botones para abrir el modal ${modalId}`);
+                
+                // Agregar listener de diagnóstico al modal
+                modalElement.addEventListener('show.bs.modal', function() {
+                    console.log(`DEBUG: Evento show.bs.modal disparado para ${modalId}`);
+                });
+                
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    console.log(`DEBUG: El modal ${modalId} se ha mostrado completamente`);
+                });
+                
+                buttons.forEach((button, index) => {
+                    button.addEventListener('click', function(e) {
+                        console.log(`DEBUG: Botón #${index} clickeado para abrir ${modalId}`);
+                    });
+                });
+            } else {
+                console.error(`ERROR: Modal ${modalId} no encontrado en el DOM`);
+            }
+        });
+        
+        // Revisar formularios
+        const forms = document.querySelectorAll('form');
+        console.log(`DEBUG: Se encontraron ${forms.length} formularios en la página`);
+        
+        forms.forEach((form, index) => {
+            console.log(`DEBUG: Formulario #${index} - Action: ${form.action}`);
+            
+            form.addEventListener('submit', function(e) {
+                console.log(`DEBUG: Formulario #${index} enviado a ${this.action}`);
+            });
+        });
+        
+        console.log('=== DEBUG: Fin de la inicialización de la página de detalle ===');
+    });
+</script>
 @endsection
