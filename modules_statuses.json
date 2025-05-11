@@ -1,4 +1,5 @@
 {
     "Core": true,
-    "Customer": true
+    "Customer": true,
+    "Services": true
 }
