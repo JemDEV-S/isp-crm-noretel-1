@@ -8,9 +8,14 @@ use Illuminate\Routing\Controller;
 use Modules\Services\Services\ServiceService;
 use Modules\Services\Http\Requests\ServiceRequest;
 use Illuminate\Support\Facades\Auth;
+use Modules\Services\Repositories\ServiceRepository;
 
 class ServiceController extends Controller
 {
+    /**
+     * @var ServiceRepository
+     */
+    protected $serviceRepository;
     /**
      * @var ServiceService
      */
@@ -21,9 +26,11 @@ class ServiceController extends Controller
      *
      * @param ServiceService $serviceService
      */
-    public function __construct(ServiceService $serviceService)
+    public function __construct(ServiceRepository $serviceRepository,
+         ServiceService $serviceService)
     {
         $this->serviceService = $serviceService;
+        $this->serviceRepository = $serviceRepository;
     }
 
     /**
@@ -93,7 +100,7 @@ class ServiceController extends Controller
      */
     public function show($id)
     {
-        $service = $this->serviceService->serviceRepository->find($id);
+        $service = $this->serviceRepository->find($id);
 
         $plans = $service->plans;
         $additionalServices = $service->additionalServices;
@@ -108,7 +115,7 @@ class ServiceController extends Controller
      */
     public function edit($id)
     {
-        $service = $this->serviceService->serviceRepository->find($id);
+        $service = $this->serviceRepository->find($id);
 
         $serviceTypes = [
             'internet' => 'Internet',

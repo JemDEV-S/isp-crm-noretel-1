@@ -10,9 +10,15 @@ use Modules\Services\Services\ServiceService;
 use Modules\Services\Services\PromotionService;
 use Modules\Services\Http\Requests\PlanRequest;
 use Illuminate\Support\Facades\Auth;
+use Modules\Services\Repositories\PlanRepository;
 
 class PlanController extends Controller
 {
+    /**
+     * @var PlanRepository
+     */
+    protected $planRepository;
+
     /**
      * @var PlanService
      */
@@ -36,10 +42,12 @@ class PlanController extends Controller
      * @param PromotionService $promotionService
      */
     public function __construct(
+        PlanRepository $planRepository,
         PlanService $planService,
         ServiceService $serviceService,
         PromotionService $promotionService
     ) {
+        $this->planRepository = $planRepository;
         $this->planService = $planService;
         $this->serviceService = $serviceService;
         $this->promotionService = $promotionService;
@@ -129,7 +137,7 @@ class PlanController extends Controller
      */
     public function show($id)
     {
-        $plan = $this->planService->planRepository->find($id);
+        $plan = $this->planRepository->find($id);
         $service = $plan->service;
         $activePromotions = $plan->promotions()->currentlyActive()->get();
         $inactivePromotions = $plan->promotions()->where('active', true)
@@ -153,7 +161,7 @@ class PlanController extends Controller
      */
     public function edit($id)
     {
-        $plan = $this->planService->planRepository->find($id);
+        $plan = $this->planRepository->find($id);
         $services = $this->serviceService->getAllServices(true)['services'];
         $promotions = $this->promotionService->getAllPromotions()['promotions'];
 
@@ -244,7 +252,7 @@ class PlanController extends Controller
      */
     public function destroy($id, Request $request)
     {
-        $plan = $this->planService->planRepository->find($id);
+        $plan = $this->planRepository->find($id);
         $serviceId = $plan->service_id;
 
         $result = $this->planService->deletePlan(

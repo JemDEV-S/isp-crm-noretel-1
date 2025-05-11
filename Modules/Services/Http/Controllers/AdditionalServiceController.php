@@ -9,9 +9,14 @@ use Modules\Services\Services\AdditionalServiceService;
 use Modules\Services\Services\ServiceService;
 use Modules\Services\Http\Requests\AdditionalServiceRequest;
 use Illuminate\Support\Facades\Auth;
+use Modules\Services\Repositories\AdditionalServiceRepository;
 
 class AdditionalServiceController extends Controller
 {
+    /**
+     * @var AdditionalServiceRepository
+     */
+    protected $additionalServiceRepository;
     /**
      * @var AdditionalServiceService
      */
@@ -29,11 +34,13 @@ class AdditionalServiceController extends Controller
      * @param ServiceService $serviceService
      */
     public function __construct(
+        AdditionalServiceRepository $additionalServiceRepository,
         AdditionalServiceService $additionalServiceService,
         ServiceService $serviceService
     ) {
         $this->additionalServiceService = $additionalServiceService;
         $this->serviceService = $serviceService;
+        $this->additionalServiceRepository = $additionalServiceRepository;
     }
 
     /**
@@ -117,7 +124,7 @@ class AdditionalServiceController extends Controller
      */
     public function show($id)
     {
-        $additionalService = $this->additionalServiceService->additionalServiceRepository->find($id);
+        $additionalService = $this->additionalServiceRepository->find($id);
         $service = $additionalService->service;
 
         return view('services::additional-services.show', [
@@ -133,7 +140,7 @@ class AdditionalServiceController extends Controller
      */
     public function edit($id)
     {
-        $additionalService = $this->additionalServiceService->additionalServiceRepository->find($id);
+        $additionalService = $this->additionalServiceRepository->find($id);
         $services = $this->serviceService->getAllServices(true)['services'];
 
         return view('services::additional-services.edit', [
@@ -177,7 +184,7 @@ class AdditionalServiceController extends Controller
      */
     public function destroy($id, Request $request)
     {
-        $additionalService = $this->additionalServiceService->additionalServiceRepository->find($id);
+        $additionalService = $this->additionalServiceRepository->find($id);
         $serviceId = $additionalService->service_id;
 
         $result = $this->additionalServiceService->deleteAdditionalService(

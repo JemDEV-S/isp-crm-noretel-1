@@ -4,6 +4,8 @@ namespace Modules\Services\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Factory;
+use Illuminate\Support\Facades\Gate;
+use Modules\Core\Entities\User;
 
 class ServicesServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+        $this->registerGates();
     }
 
     /**
@@ -89,6 +92,79 @@ class ServicesServiceProvider extends ServiceProvider
             $this->loadTranslationsFrom(module_path($this->moduleName, 'Resources/lang'), $this->moduleNameLower);
             $this->loadJsonTranslationsFrom(module_path($this->moduleName, 'Resources/lang'));
         }
+    }
+
+    /**
+     * Register gates for the Services module.
+     *
+     * @return void
+     */
+    public function registerGates()
+    {
+        // Gates para gestionar servicios
+        Gate::define('manage-services', function ($user) {
+            return $user->hasPermissionTo('manage','services');
+        });
+        Gate::define('services-view', function ($user) {
+            return $user->canViewModule('services');
+        });
+        Gate::define('services-create', function ($user) {
+            return $user->canCreateInModule('services');
+        });
+        Gate::define('services-update', function ($user) {
+            return $user->canEditInModule('services');
+        });
+        Gate::define('services-delete', function ($user) {
+            return $user->canDeleteInModule('services');
+        });
+        // Gates para gestionar Planes
+        Gate::define('manage-plans', function ($user) {
+            return $user->hasPermissionTo('manage','plans');
+        });
+        Gate::define('plans-view', function ($user) {
+            return $user->canViewModule('plans');
+        });
+        Gate::define('plans-create', function ($user) {
+            return $user->canCreateInModule('plans');
+        });
+        Gate::define('plans-update', function ($user) {
+            return $user->canEditInModule('plans');
+        });
+        Gate::define('plans-delete', function ($user) {
+            return $user->canDeleteInModule('plans');
+        });
+        // Gates para gestionar Promociones
+        Gate::define('manage-promotions', function ($user) {
+            return $user->hasPermissionTo('manage','promotions');
+        });
+        Gate::define('promotions-view', function ($user) {
+            return $user->canViewModule('promotions');
+        });
+        Gate::define('promotions-create', function ($user) {
+            return $user->canCreateInModule('promotions');
+        });
+        Gate::define('promotions-update', function ($user) {
+            return $user->canEditInModule('promotions');
+        });
+        Gate::define('promotions-delete', function ($user) {
+            return $user->canDeleteInModule('promotions');
+        });
+        // Gates para gestionar Servicios Adicionales
+        Gate::define('manage-additional-services', function ($user) {
+            return $user->hasPermissionTo('manage','additional-services');
+        });
+        Gate::define('additional-services-view', function ($user) {
+            return $user->canViewModule('additional-services');
+        });
+        Gate::define('additional-services-create', function ($user) {
+            return $user->canCreateInModule('additional-services');
+        });
+        Gate::define('additional-services-update', function ($user) {
+            return $user->canEditInModule('additional-services');
+        });
+        Gate::define('additional-services-delete', function ($user) {
+            return $user->canDeleteInModule('additional-services');
+        });
     }
 
     /**

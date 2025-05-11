@@ -9,9 +9,15 @@ use Modules\Services\Services\PromotionService;
 use Modules\Services\Services\PlanService;
 use Modules\Services\Http\Requests\PromotionRequest;
 use Illuminate\Support\Facades\Auth;
+use Modules\Services\Repositories\PromotionRepository;
 
 class PromotionController extends Controller
 {
+    /**
+     * @var PromotionRepository
+     */
+    protected $promotionRepository;
+
     /**
      * @var PromotionService
      */
@@ -28,10 +34,14 @@ class PromotionController extends Controller
      * @param PromotionService $promotionService
      * @param PlanService $planService
      */
-    public function __construct(PromotionService $promotionService, PlanService $planService)
+    public function __construct(
+        PromotionRepository $promotionRepository,
+        PromotionService $promotionService,
+        PlanService $planService)
     {
         $this->promotionService = $promotionService;
         $this->planService = $planService;
+        $this->promotionRepository = $promotionRepository;
     }
 
     /**
@@ -101,7 +111,7 @@ class PromotionController extends Controller
      */
     public function show($id)
     {
-        $promotion = $this->promotionService->promotionRepository->find($id);
+        $promotion = $this->promotionRepository->find($id);
         $plans = $promotion->plans;
 
         return view('services::promotions.show', [
@@ -117,7 +127,7 @@ class PromotionController extends Controller
      */
     public function edit($id)
     {
-        $promotion = $this->promotionService->promotionRepository->find($id);
+        $promotion = $this->promotionRepository->find($id);
         $plans = $this->planService->getAllPlans(true)['plans'];
         $selectedPlans = $promotion->plans->pluck('id')->toArray();
 

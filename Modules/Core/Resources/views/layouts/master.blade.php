@@ -392,6 +392,46 @@
                 </ul>
 
                 <div class="sidebar-divider"></div>
+                <!-- Módulo Servicios -->
+                <div class="sidebar-module-group">
+                    <div class="sidebar-module-title">
+                        <i class="fas fa-plug"></i> Servicios
+                    </div>
+                    <ul class="nav flex-column">
+                        @if(auth()->user()->canViewModule('services'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('services.services.*') ? 'active' : '' }}"
+                               href="{{ route('services.services.index') }}">
+                               <i class="fas fa-cogs"></i> Gestión de Servicios
+                            </a>
+                        </li>
+                        @endif
+                        @if (auth()->user()->canViewModule('plans'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('services.plans.*') ? 'active' : '' }}"
+                               href="{{ route('services.plans.index') }}">
+                               <i class="fas fa-network-wired"></i> Planes
+                            </a>
+                        </li>
+                        @endif
+                        @if (auth()->user()->canViewModule('promotions'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('services.promotions.*') ? 'active' : '' }}"
+                               href="{{ route('services.promotions.index') }}">
+                               <i class="fas fa-tags"></i> Promociones
+                            </a>
+                        </li>
+                        @endif
+                        @if (auth()->user()->canViewModule('additional-services'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('services.additional-services.*') ? 'active' : '' }}"
+                               href="{{ route('services.additional-services.index') }}">
+                               <i class="fas fa-plus-circle"></i> Servicios Adicionales
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                </div>
 
                 <!-- Módulo Clientes -->
                 <div class="sidebar-module-group">
@@ -677,7 +717,7 @@
     <!-- Scripts JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    
+
     <!-- Script para Chart.js - necesario para dashboard de clientes -->
     @if(request()->segment(1) == 'users' && request()->segment(2) == '')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

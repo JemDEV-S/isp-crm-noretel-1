@@ -339,6 +339,59 @@ class RoleController extends Controller
         // o ser detectado dinámicamente a partir de las clases del sistema
 
         return [
+            //___________Services Modules___________
+            'services' => [
+                'name' => 'Servicios',
+                'actions' => [
+                    'view' => 'Ver servicios',
+                    'create' => 'Crear servicios',
+                    'edit' => 'Editar servicios',
+                    'delete' => 'Eliminar servicios',
+                    'manage' => 'Gestionar servicios (todos los permisos)'
+                ]
+            ],
+            'plans' => [
+                'name' => 'Planes',
+                'actions' => [
+                    'view' => 'Ver planes',
+                    'create' => 'Crear planes',
+                    'edit' => 'Editar planes',
+                    'delete' => 'Eliminar planes',
+                    'manage' => 'Gestionar planes (todos los permisos)'
+                ]
+            ],
+            'promotions' => [
+                'name' => 'Promociones',
+                'actions' => [
+                    'view' => 'Ver promociones',
+                    'create' => 'Crear promociones',
+                    'edit' => 'Editar promociones',
+                    'delete' => 'Eliminar promociones',
+                    'manage' => 'Gestionar promociones (todos los permisos)'
+                ]
+            ],
+            'additional-services' => [
+                'name' => 'Servicios Adicionales',
+                'actions' => [
+                    'view' => 'Ver servicios adicionales',
+                    'create' => 'Crear servicios adicionales',
+                    'edit' => 'Editar servicios adicionales',
+                    'delete' => 'Eliminar servicios adicionales',
+                    'manage' => 'Gestionar servicios adicionales (todos los permisos)'
+                ]
+            ],
+            //___________Customer Modules___________
+            'customers' => [
+                'name' => 'Clientes',
+                'actions' => [
+                    'view' => 'Ver clientes',
+                    'create' => 'Crear clientes',
+                    'edit' => 'Editar clientes',
+                    'delete' => 'Eliminar clientes',
+                    'manage' => 'Gestionar clientes (todos los permisos)'
+                ]
+            ],
+            //___________Core Modules___________
             'users' => [
                 'name' => 'Usuarios',
                 'actions' => [
