@@ -102,4 +102,8 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
 
         return $query->paginate($perPage);
     }
+        public function getActiveCustomers()
+    {
+        return $this->model->where('active', true)->get();
+    }
 }

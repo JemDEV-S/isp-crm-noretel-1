@@ -1,5 +1,7 @@
 {
     "Core": true,
     "Customer": true,
-    "Services": true
+    "Services": true,
+    "Contract": true,
+    "Billing": true
 }
