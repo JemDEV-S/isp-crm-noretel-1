@@ -37,4 +37,9 @@ class AdditionalServiceRepository extends BaseRepository
     {
         return $this->model->where('configurable', true)->get();
     }
+   public function getActiveServices()
+{
+    return $this->model->where('configurable', true)->get();
+}
+
 }

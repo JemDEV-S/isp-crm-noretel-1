@@ -474,6 +474,56 @@
                     </ul>
                 </div>
 
+                <!-- Módulo Contratos -->
+<div class="sidebar-module-group">
+    <div class="sidebar-module-title">
+        <i class="fas fa-file-signature"></i> Contratos
+    </div>
+    <ul class="nav flex-column">
+        @if(auth()->user()->canViewModule('contracts'))
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('contract.dashboard') ? 'active' : '' }}"
+               href="{{ route('contract.dashboard') }}">
+               <i class="fas fa-chart-line"></i> Dashboard Contratos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('contract.contracts.*') ? 'active' : '' }}"
+               href="{{ route('contract.contracts.index') }}">
+               <i class="fas fa-file-contract"></i> Gestión de Contratos
+            </a>
+        </li>
+        @endif
+        
+        @if(auth()->user()->canViewModule('installations'))
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('contract.installations.*') ? 'active' : '' }}"
+               href="{{ route('contract.installations.index') }}">
+               <i class="fas fa-tools"></i> Instalaciones
+            </a>
+        </li>
+        @endif
+        
+        @if(auth()->user()->canViewModule('routes'))
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('contract.routes.*') ? 'active' : '' }}"
+               href="{{ route('contract.routes.index') }}">
+               <i class="fas fa-map-marked-alt"></i> Rutas
+            </a>
+        </li>
+        @endif
+        
+        @if(auth()->user()->canViewModule('slas'))
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('contract.slas.*') ? 'active' : '' }}"
+               href="{{ route('contract.slas.index') }}">
+               <i class="fas fa-handshake"></i> SLAs
+            </a>
+        </li>
+        @endif
+    </ul>
+</div>
+
                 <!-- Módulo Sistema -->
                 <div class="sidebar-module-group">
                     <div class="sidebar-module-title">
