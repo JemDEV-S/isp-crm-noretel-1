@@ -26,7 +26,7 @@ class UpdateContractRequest extends FormRequest
         return [
             'customer_id' => 'required|exists:customers,id',
             'plan_id' => 'required|exists:plans,id',
-            'node_id' => 'required|exists:nodes,id',
+            'node_id' => 'nullable|exists:nodes,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
             'status' => 'nullable|string|in:active,pending_installation,expired,renewed,cancelled,suspended',

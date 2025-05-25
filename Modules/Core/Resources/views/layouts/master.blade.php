@@ -392,6 +392,8 @@
                 </ul>
 
                 <div class="sidebar-divider"></div>
+
+
                 <!-- Módulo Servicios -->
                 <div class="sidebar-module-group">
                     <div class="sidebar-module-title">
@@ -475,55 +477,106 @@
                 </div>
 
                 <!-- Módulo Contratos -->
+                <div class="sidebar-module-group">
+                    <div class="sidebar-module-title">
+                        <i class="fas fa-file-signature"></i> Contratos
+                    </div>
+                    <ul class="nav flex-column">
+                        @if(auth()->user()->canViewModule('contracts'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('contract.dashboard') ? 'active' : '' }}"
+                            href="{{ route('contract.dashboard') }}">
+                            <i class="fas fa-chart-line"></i> Dashboard Contratos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('contract.contracts.*') ? 'active' : '' }}"
+                            href="{{ route('contract.contracts.index') }}">
+                            <i class="fas fa-file-contract"></i> Gestión de Contratos
+                            </a>
+                        </li>
+                        @endif
+
+                        @if(auth()->user()->canViewModule('installations'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('contract.installations.*') ? 'active' : '' }}"
+                            href="{{ route('contract.installations.index') }}">
+                            <i class="fas fa-tools"></i> Instalaciones
+                            </a>
+                        </li>
+                        @endif
+
+                        @if(auth()->user()->canViewModule('routes'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('contract.routes.*') ? 'active' : '' }}"
+                            href="{{ route('contract.routes.index') }}">
+                            <i class="fas fa-map-marked-alt"></i> Rutas
+                            </a>
+                        </li>
+                        @endif
+
+                        @if(auth()->user()->canViewModule('slas'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('contract.slas.*') ? 'active' : '' }}"
+                            href="{{ route('contract.slas.index') }}">
+                            <i class="fas fa-handshake"></i> SLAs
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                </div>
+                <!-- Módulo Facturación y Cobranza -->
 <div class="sidebar-module-group">
     <div class="sidebar-module-title">
-        <i class="fas fa-file-signature"></i> Contratos
+        <i class="fas fa-file-invoice-dollar"></i> Facturación
     </div>
     <ul class="nav flex-column">
-        @if(auth()->user()->canViewModule('contracts'))
+        @if(auth()->user()->canViewModule('invoices') || auth()->user()->canViewModule('payments'))
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('contract.dashboard') ? 'active' : '' }}"
-               href="{{ route('contract.dashboard') }}">
-               <i class="fas fa-chart-line"></i> Dashboard Contratos
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('contract.contracts.*') ? 'active' : '' }}"
-               href="{{ route('contract.contracts.index') }}">
-               <i class="fas fa-file-contract"></i> Gestión de Contratos
+            <a class="nav-link {{ request()->routeIs('billing.dashboard') ? 'active' : '' }}"
+               href="{{ route('billing.dashboard') }}">
+               <i class="fas fa-chart-line"></i> Dashboard Facturación
             </a>
         </li>
         @endif
-        
-        @if(auth()->user()->canViewModule('installations'))
+
+        @if(auth()->user()->canViewModule('invoices'))
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('contract.installations.*') ? 'active' : '' }}"
-               href="{{ route('contract.installations.index') }}">
-               <i class="fas fa-tools"></i> Instalaciones
+            <a class="nav-link {{ request()->routeIs('billing.invoices.*') ? 'active' : '' }}"
+               href="{{ route('billing.invoices.index') }}">
+               <i class="fas fa-file-invoice"></i> Facturas
             </a>
         </li>
         @endif
-        
-        @if(auth()->user()->canViewModule('routes'))
+
+        @if(auth()->user()->canViewModule('payments'))
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('contract.routes.*') ? 'active' : '' }}"
-               href="{{ route('contract.routes.index') }}">
-               <i class="fas fa-map-marked-alt"></i> Rutas
+            <a class="nav-link {{ request()->routeIs('billing.payments.*') ? 'active' : '' }}"
+               href="{{ route('billing.payments.index') }}">
+               <i class="fas fa-money-bill-wave"></i> Pagos
             </a>
         </li>
         @endif
-        
-        @if(auth()->user()->canViewModule('slas'))
+
+        @if(auth()->user()->canViewModule('credit_notes'))
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('contract.slas.*') ? 'active' : '' }}"
-               href="{{ route('contract.slas.index') }}">
-               <i class="fas fa-handshake"></i> SLAs
+            <a class="nav-link {{ request()->routeIs('billing.credit-notes.*') ? 'active' : '' }}"
+               href="{{ route('billing.credit-notes.index') }}">
+               <i class="fas fa-receipt"></i> Notas de Crédito
+            </a>
+        </li>
+        @endif
+
+        @if(auth()->user()->canViewModule('financial_reports'))
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('billing.reports') ? 'active' : '' }}"
+               href="{{ route('billing.reports') }}">
+               <i class="fas fa-chart-bar"></i> Reportes Financieros
             </a>
         </li>
         @endif
     </ul>
 </div>
-
                 <!-- Módulo Sistema -->
                 <div class="sidebar-module-group">
                     <div class="sidebar-module-title">

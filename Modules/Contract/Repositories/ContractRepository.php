@@ -27,9 +27,9 @@ class ContractRepository extends BaseRepository
     public function getWithRelations($id)
     {
         return $this->model->with([
-            'customer', 
-            'plan', 
-            'node', 
+            'customer',
+            'plan',
+            'node',
             'contractedServices.additionalService',
             'slas',
             'installations'
@@ -77,14 +77,14 @@ class ContractRepository extends BaseRepository
         return DB::transaction(function () use ($contractData, $contractedServices) {
             // Create the contract
             $contract = $this->create($contractData);
-            
+
             // Add contracted services if any
             if (!empty($contractedServices)) {
                 foreach ($contractedServices as $service) {
                     $contract->contractedServices()->create($service);
                 }
             }
-            
+
             return $contract;
         });
     }
@@ -103,18 +103,18 @@ class ContractRepository extends BaseRepository
             // Update the contract
             $contract = $this->find($id);
             $contract->update($contractData);
-            
+
             // Sync contracted services if provided
             if (!empty($contractedServices)) {
                 // Remove existing services
                 $contract->contractedServices()->delete();
-                
+
                 // Add new services
                 foreach ($contractedServices as $service) {
                     $contract->contractedServices()->create($service);
                 }
             }
-            
+
             return $contract->fresh(['contractedServices.additionalService']);
         });
     }
@@ -141,7 +141,7 @@ class ContractRepository extends BaseRepository
     public function getNearExpiration($days = 30)
     {
         $expirationDate = now()->addDays($days);
-        
+
         return $this->model->where('status', 'active')
             ->whereNotNull('end_date')
             ->where('end_date', '<=', $expirationDate)
@@ -189,7 +189,7 @@ class ContractRepository extends BaseRepository
     {
         return DB::transaction(function () use ($id, $renewalData) {
             $contract = $this->find($id);
-            
+
             // Update contract with renewal data
             $contract->update([
                 'start_date' => $renewalData['start_date'] ?? now(),
@@ -197,13 +197,13 @@ class ContractRepository extends BaseRepository
                 'status' => 'active',
                 'final_price' => $renewalData['final_price'] ?? $contract->final_price,
             ]);
-            
+
             // Update plan if provided
             if (isset($renewalData['plan_id'])) {
                 $contract->plan_id = $renewalData['plan_id'];
                 $contract->save();
             }
-            
+
             return $contract->fresh();
         });
     }
@@ -218,12 +218,12 @@ class ContractRepository extends BaseRepository
     public function cancel($id, $reason = null)
     {
         $contract = $this->find($id);
-        
+
         $contract->update([
             'status' => 'cancelled',
             'notes' => $reason,
         ]);
-        
+
         return $contract;
     }
 
@@ -244,13 +244,13 @@ class ContractRepository extends BaseRepository
             ->orderBy('year')
             ->orderBy('month')
             ->get();
-            
+
         $data = [];
         foreach ($result as $row) {
             $monthName = date('F', mktime(0, 0, 0, $row->month, 1));
             $data[$monthName] = $row->total;
         }
-        
+
         return $data;
     }
 
@@ -263,6 +263,18 @@ class ContractRepository extends BaseRepository
     public function getByNode($nodeId)
     {
         return $this->model->where('node_id', $nodeId)
+            ->with(['customer', 'plan'])
+            ->get();
+    }
+
+    /**
+     * Get active contracs.
+     * @return \Illuminate\Database\Eloquent\Collection
+     *
+     */
+    public function getActiveContracts()
+    {
+        return $this->model->where('status', 'active')
             ->with(['customer', 'plan'])
             ->get();
     }

@@ -119,9 +119,9 @@ class ContractController extends Controller
         $expiredCount = $this->contractRepository->getExpired()->count();
 
         return view('contract::contracts.index', compact(
-            'contracts', 
-            'search', 
-            'status', 
+            'contracts',
+            'search',
+            'status',
             'customerId',
             'contractsByStatus',
             'nearExpirationCount',
@@ -146,7 +146,7 @@ class ContractController extends Controller
         $customers = $this->customerRepository->getActiveCustomers();
         $plans = $this->planRepository->getActivePlans();
         $additionalServices = $this->additionalServiceRepository->getActiveServices();
-        $nodes = $this->nodeRepository->getActiveNodes();
+        //$nodes = $this->nodeRepository->getActiveNodes();
         $slas = $this->slaRepository->getActiveSLAs();
 
         return view('contract::contracts.create', compact(
@@ -154,7 +154,7 @@ class ContractController extends Controller
             'customer',
             'plans',
             'additionalServices',
-            'nodes',
+            //'nodes',
             'slas'
         ));
     }
@@ -167,12 +167,12 @@ class ContractController extends Controller
     public function store(StoreContractRequest $request)
     {
         $data = $request->validated();
-        
+
         // Prepare contract data
         $contractData = [
             'customer_id' => $data['customer_id'],
             'plan_id' => $data['plan_id'],
-            'node_id' => $data['node_id'],
+            //'node_id' => $data['node_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'] ?? null,
             'status' => 'pending_installation',
@@ -180,7 +180,7 @@ class ContractController extends Controller
             'assigned_ip' => $data['assigned_ip'] ?? null,
             'vlan' => $data['vlan'] ?? null,
         ];
-        
+
         // Prepare contracted services data
         $contractedServices = [];
         if (isset($data['additional_services']) && is_array($data['additional_services'])) {
@@ -194,15 +194,15 @@ class ContractController extends Controller
                 }
             }
         }
-        
+
         // Create contract with services
         $contract = $this->contractRepository->createWithServices($contractData, $contractedServices);
-        
+
         // Create SLA if provided
 if (isset($data['sla_id']) && $data['sla_id']) {
     $contract->slas()->attach($data['sla_id']);
 }
-        
+
         // Register action for audit log
         AuditLog::register(
             Auth::id(),
@@ -213,7 +213,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             null,
             $contract->toArray()
         );
-        
+
         return redirect()->route('contract.contracts.show', $contract->id)
             ->with('success', 'Contrato creado correctamente. Ahora debe programar la instalación.');
     }
@@ -226,13 +226,13 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function show($id)
     {
         $contract = $this->contractRepository->getWithRelations($id);
-        
+
         // Get installations for this contract
         $installations = $contract->installations()->with(['technician', 'route'])->get();
-        
+
         // Get invoices for this contract
         $invoices = $contract->invoices()->with(['payments'])->get();
-        
+
         return view('contract::contracts.show', compact('contract', 'installations', 'invoices'));
     }
 
@@ -244,13 +244,13 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function edit($id)
     {
         $contract = $this->contractRepository->getWithRelations($id);
-        
+
         $customers = $this->customerRepository->getActiveCustomers();
         $plans = $this->planRepository->getActivePlans();
         $additionalServices = $this->additionalServiceRepository->getActiveServices();
-        $nodes = $this->nodeRepository->getActiveNodes();
+        //$nodes = $this->nodeRepository->getActiveNodes();
         $slas = $this->slaRepository->getActiveSLAs();
-        
+
         // Get current contracted services for pre-selection
         $currentServices = [];
         foreach ($contract->contractedServices as $service) {
@@ -260,13 +260,13 @@ if (isset($data['sla_id']) && $data['sla_id']) {
                 'configuration' => $service->configuration,
             ];
         }
-        
+
         return view('contract::contracts.edit', compact(
             'contract',
             'customers',
             'plans',
             'additionalServices',
-            'nodes',
+            //'nodes',
             'slas',
             'currentServices'
         ));
@@ -282,15 +282,15 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     {
         $contract = $this->contractRepository->find($id);
         $data = $request->validated();
-        
+
         // Save old data for audit
         $oldData = $contract->toArray();
-        
+
         // Prepare contract data
         $contractData = [
             'customer_id' => $data['customer_id'],
             'plan_id' => $data['plan_id'],
-            'node_id' => $data['node_id'],
+            //'node_id' => $data['node_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'] ?? null,
             'status' => $data['status'] ?? $contract->status,
@@ -298,7 +298,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             'assigned_ip' => $data['assigned_ip'] ?? null,
             'vlan' => $data['vlan'] ?? null,
         ];
-        
+
         // Prepare contracted services data
         $contractedServices = [];
         if (isset($data['additional_services']) && is_array($data['additional_services'])) {
@@ -312,10 +312,10 @@ if (isset($data['sla_id']) && $data['sla_id']) {
                 }
             }
         }
-        
+
         // Update contract with services
         $contract = $this->contractRepository->updateWithServices($id, $contractData, $contractedServices);
-        
+
         // Update SLA if provided
         if (isset($data['sla_id'])) {
             $contract->sla()->delete();
@@ -325,7 +325,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
                 ]);
             }
         }
-        
+
         // Register action for audit log
         AuditLog::register(
             Auth::id(),
@@ -336,7 +336,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             $oldData,
             $contract->toArray()
         );
-        
+
         return redirect()->route('contract.contracts.show', $contract->id)
             ->with('success', 'Contrato actualizado correctamente.');
     }
@@ -350,19 +350,19 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function destroy($id, Request $request)
     {
         $contract = $this->contractRepository->find($id);
-        
+
         // Check if contract has installations or invoices
         if ($contract->installations()->count() > 0 || $contract->invoices()->count() > 0) {
             return redirect()->route('contract.contracts.index')
                 ->with('error', 'No se puede eliminar un contrato que tiene instalaciones o facturas asociadas.');
         }
-        
+
         // Save old data for audit
         $contractData = $contract->toArray();
-        
+
         // Delete contract
         $this->contractRepository->delete($id);
-        
+
         // Register action for audit log
         AuditLog::register(
             Auth::id(),
@@ -373,7 +373,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             $contractData,
             null
         );
-        
+
         return redirect()->route('contract.contracts.index')
             ->with('success', 'Contrato eliminado correctamente.');
     }
@@ -386,15 +386,15 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function showRenewForm($id)
     {
         $contract = $this->contractRepository->getWithRelations($id);
-        
+
         // Check if contract can be renewed
         if (!$contract->canBeRenewed()) {
             return redirect()->route('contract.contracts.show', $id)
                 ->with('error', 'Este contrato no puede ser renovado en este momento.');
         }
-        
+
         $plans = $this->planRepository->getActivePlans();
-        
+
         return view('contract::contracts.renew', compact('contract', 'plans'));
     }
 
@@ -408,10 +408,10 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     {
         $contract = $this->contractRepository->find($id);
         $data = $request->validated();
-        
+
         // Save old data for audit
         $oldData = $contract->toArray();
-        
+
         // Prepare renewal data
         $renewalData = [
             'start_date' => $data['start_date'] ?? now(),
@@ -419,10 +419,10 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             'final_price' => $data['final_price'] ?? $contract->final_price,
             'plan_id' => $data['plan_id'] ?? $contract->plan_id,
         ];
-        
+
         // Renew contract
         $contract = $this->contractRepository->renew($id, $renewalData);
-        
+
         // Register action for audit log
         AuditLog::register(
             Auth::id(),
@@ -433,7 +433,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             $oldData,
             $contract->toArray()
         );
-        
+
         return redirect()->route('contract.contracts.show', $contract->id)
             ->with('success', 'Contrato renovado correctamente.');
     }
@@ -449,15 +449,15 @@ if (isset($data['sla_id']) && $data['sla_id']) {
         $request->validate([
             'reason' => 'required|string|max:500'
         ]);
-        
+
         $contract = $this->contractRepository->find($id);
-        
+
         // Save old data for audit
         $oldData = $contract->toArray();
-        
+
         // Cancel contract
         $contract = $this->contractRepository->cancel($id, $request->reason);
-        
+
         // Register action for audit log
         AuditLog::register(
             Auth::id(),
@@ -468,7 +468,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
             $oldData,
             $contract->toArray()
         );
-        
+
         return redirect()->route('contract.contracts.show', $contract->id)
             ->with('success', 'Contrato cancelado correctamente.');
     }
@@ -480,7 +480,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function nearExpiration()
     {
         $contracts = $this->contractRepository->getNearExpiration();
-        
+
         return view('contract::contracts.near-expiration', compact('contracts'));
     }
 
@@ -491,7 +491,7 @@ if (isset($data['sla_id']) && $data['sla_id']) {
     public function expired()
     {
         $contracts = $this->contractRepository->getExpired();
-        
+
         return view('contract::contracts.expired', compact('contracts'));
     }
 
@@ -506,14 +506,14 @@ if (isset($data['sla_id']) && $data['sla_id']) {
         $nearExpirationContracts = $this->contractRepository->getNearExpiration();
         $expiredContracts = $this->contractRepository->getExpired();
         $monthlyContractsData = $this->contractRepository->getMonthlyContractsCount();
-        
+
         // Get recent contracts
         $recentContracts = $this->contractRepository->query()
             ->with(['customer', 'plan'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
         return view('contract::dashboard', compact(
             'contractsByStatus',
             'nearExpirationContracts',

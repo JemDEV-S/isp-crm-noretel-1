@@ -15,19 +15,19 @@
                         <i class="fa fa-edit"></i> Editar
                     </a>
                     @endif
-                    
+
                     @if($contract->canBeRenewed() && auth()->user()->canEditInModule('contracts'))
                     <a href="{{ route('contract.contracts.renew-form', $contract->id) }}" class="btn btn-success btn-sm">
                         <i class="fa fa-sync-alt"></i> Renovar
                     </a>
                     @endif
-                    
+
                     @if(($contract->status == 'active' || $contract->status == 'renewed') && auth()->user()->canEditInModule('contracts'))
                     <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelContractModal">
                         <i class="fa fa-ban"></i> Cancelar
                     </button>
                     @endif
-                    
+
                     <a href="{{ route('contract.contracts.index') }}" class="btn btn-secondary btn-sm">
                         <i class="fa fa-arrow-left"></i> Volver
                     </a>
@@ -131,7 +131,7 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <div class="row mt-4">
                     <div class="col-md-6">
                         <h6>Información del Plan</h6>
@@ -162,29 +162,29 @@
                             </tr>
                             <tr>
                                 <th>Características</th>
-                                <td>{{ $contract->plan->features }}</td>
+                                <td>{{ is_array($contract->plan->features) ? implode(', ', $contract->plan->features) : $contract->plan->features }}</td>
                             </tr>
                         </table>
                     </div>
                     <div class="col-md-6">
                         <h6>Información Técnica</h6>
                         <table class="table table-striped table-bordered">
-                            <tr>
+                            {{-- <tr>
                                 <th width="30%">Nodo</th>
                                 <td>{{ $contract->node->name }}</td>
-                            </tr>
-                            <tr>
+                            </tr> --}}
+                            {{-- <tr>
                                 <th>Ubicación del Nodo</th>
                                 <td>{{ $contract->node->location }}</td>
-                            </tr>
-                            <tr>
+                            </tr> --}}
+                            {{-- <tr>
                                 <th>Capacidad</th>
                                 <td>{{ $contract->node->used_capacity }}/{{ $contract->node->total_capacity }}</td>
-                            </tr>
-                            <tr>
+                            </tr> --}}
+                            {{-- <tr>
                                 <th>Tipo de Conexión</th>
                                 <td>{{ $contract->node->connection_type }}</td>
-                            </tr>
+                            </tr> --}}
                             <tr>
                                 <th>SLA</th>
                                 <td>
@@ -219,7 +219,7 @@
                         </table>
                     </div>
                 </div>
-                
+
                 @if($contract->contractedServices->count() > 0)
                 <div class="row mt-4">
                     <div class="col-12">

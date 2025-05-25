@@ -4,9 +4,9 @@ namespace Modules\Billing\Repositories;
 
 use Modules\Core\Repositories\BaseRepository;
 use Modules\Billing\Entities\Invoice;
-use Illuminate\Support\Facades\DB;
+use Modules\Billing\Interfaces\InvoiceRepositoryInterface;
 
-class InvoiceRepository extends BaseRepository
+class InvoiceRepository extends BaseRepository implements InvoiceRepositoryInterface
 {
     /**
      * InvoiceRepository constructor.
@@ -19,136 +19,87 @@ class InvoiceRepository extends BaseRepository
     }
 
     /**
-     * Get invoice with related entities.
+     * Obtener facturas por cliente
      *
-     * @param int $id
-     * @return Invoice
+     * @param int $customerId
+     * @param array $columns
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getWithRelations($id)
+    public function getInvoicesByCustomer($customerId, $columns = ['*'])
     {
-        return $this->model->with([
-            'contract.customer',
-            'payments'
-        ])->findOrFail($id);
+        return $this->model->whereHas('contract', function ($query) use ($customerId) {
+            $query->where('customer_id', $customerId);
+        })->get($columns);
     }
 
     /**
-     * Find invoices by contract id.
+     * Obtener facturas por contrato
      *
      * @param int $contractId
+     * @param array $columns
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function findByContract($contractId)
+    public function getInvoicesByContract($contractId, $columns = ['*'])
     {
-        return $this->model->where('contract_id', $contractId)
-            ->orderBy('issue_date', 'desc')
-            ->get();
+        return $this->model->where('contract_id', $contractId)->get($columns);
     }
 
     /**
-     * Get invoices by status.
+     * Obtener facturas pendientes
      *
-     * @param string $status
+     * @param array $columns
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getByStatus($status)
+    public function getPendingInvoices($columns = ['*'])
     {
-        return $this->model->where('status', $status)
-            ->with('contract.customer')
-            ->orderBy('due_date')
-            ->get();
+        return $this->model->whereIn('status', ['pending', 'partial'])->get($columns);
     }
 
     /**
-     * Get overdue invoices.
+     * Obtener facturas vencidas
      *
+     * @param array $columns
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getOverdueInvoices()
+    public function getOverdueInvoices($columns = ['*'])
     {
         return $this->model->where('status', 'pending')
             ->where('due_date', '<', now())
-            ->with('contract.customer')
-            ->orderBy('due_date')
-            ->get();
+            ->get($columns);
     }
 
     /**
-     * Get pending invoices.
+     * Actualizar estado de factura
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param int $id
+     * @param string $status
+     * @return bool
      */
-    public function getPendingInvoices()
+    public function updateStatus($id, $status)
     {
-        return $this->model->where('status', 'pending')
-            ->where('due_date', '>=', now())
-            ->with('contract.customer')
-            ->orderBy('due_date')
-            ->get();
+        $invoice = $this->find($id);
+        return $invoice->update(['status' => $status]);
     }
 
     /**
-     * Get invoices by due date range.
+     * Generar número de factura
      *
-     * @param string $startDate
-     * @param string $endDate
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return string
      */
-    public function getByDueDateRange($startDate, $endDate)
+    public function generateInvoiceNumber()
     {
-        return $this->model->whereBetween('due_date', [$startDate, $endDate])
-            ->with('contract.customer')
-            ->orderBy('due_date')
-            ->get();
-    }
+        $prefix = config('billing.invoice.prefix', 'INV-');
+        $digits = config('billing.invoice.digits', 6);
 
-    /**
-     * Create invoice with unique invoice number.
-     *
-     * @param array $data
-     * @return Invoice
-     */
-    public function createWithNumber(array $data)
-    {
-        // Generate invoice number if not provided
-        if (!isset($data['invoice_number'])) {
-            $lastInvoice = $this->model->orderBy('id', 'desc')->first();
-            $nextId = $lastInvoice ? $lastInvoice->id + 1 : 1;
-            $year = date('Y');
-            $month = date('m');
-            $data['invoice_number'] = "INV-{$year}{$month}-" . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+        $lastInvoice = $this->model->orderBy('id', 'desc')->first();
+        $lastNumber = 0;
+
+        if ($lastInvoice) {
+            $lastNumberStr = str_replace($prefix, '', $lastInvoice->invoice_number);
+            $lastNumber = (int) $lastNumberStr;
         }
-        
-        return $this->create($data);
-    }
 
-    /**
-     * Mark invoice as paid.
-     *
-     * @param int $id
-     * @return bool
-     */
-    public function markAsPaid($id)
-    {
-        $invoice = $this->find($id);
-        
-        return $invoice->update([
-            'status' => 'paid'
-        ]);
-    }
-
-    /**
-     * Mark invoice as cancelled.
-     *
-     * @param int $id
-     * @return bool
-     */
-    public function markAsCancelled($id)
-    {
-        $invoice = $this->find($id);
-        
-        return $invoice->update([
-            'status' => 'cancelled'
-        ]);
+        $newNumber = $lastNumber + 1;
+        return $prefix . str_pad($newNumber, $digits, '0', STR_PAD_LEFT);
     }
 }

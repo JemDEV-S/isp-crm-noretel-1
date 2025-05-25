@@ -17,10 +17,15 @@ class CreatePaymentsTable extends Migration
             $table->id();
             $table->foreignId('invoice_id')->constrained('invoices')->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->timestamp('payment_date');
+            $table->date('payment_date');
             $table->string('payment_method');
-            $table->string('status')->default('completed');
+            $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->string('reference')->nullable();
+            $table->string('transaction_id')->nullable();
+            $table->string('payment_gateway')->nullable();
+            $table->json('payment_details')->nullable();
+            $table->text('notes')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null'); // Usuario que registró el pago
             $table->timestamps();
         });
     }

@@ -4,8 +4,9 @@ namespace Modules\Billing\Repositories;
 
 use Modules\Core\Repositories\BaseRepository;
 use Modules\Billing\Entities\Payment;
+use Modules\Billing\Interfaces\PaymentRepositoryInterface;
 
-class PaymentRepository extends BaseRepository
+class PaymentRepository extends BaseRepository implements PaymentRepositoryInterface
 {
     /**
      * PaymentRepository constructor.
@@ -18,78 +19,57 @@ class PaymentRepository extends BaseRepository
     }
 
     /**
-     * Find payments by invoice id.
+     * Obtener pagos por factura
      *
      * @param int $invoiceId
+     * @param array $columns
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function findByInvoice($invoiceId)
+    public function getPaymentsByInvoice($invoiceId, $columns = ['*'])
     {
-        return $this->model->where('invoice_id', $invoiceId)
-            ->orderBy('payment_date', 'desc')
-            ->get();
+        return $this->model->where('invoice_id', $invoiceId)->get($columns);
     }
 
     /**
-     * Get payments by method.
+     * Obtener pagos por cliente
      *
-     * @param string $method
+     * @param int $customerId
+     * @param array $columns
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getByMethod($method)
+    public function getPaymentsByCustomer($customerId, $columns = ['*'])
     {
-        return $this->model->where('payment_method', $method)
-            ->with('invoice')
-            ->orderBy('payment_date', 'desc')
-            ->get();
+        return $this->model->whereHas('invoice.contract', function ($query) use ($customerId) {
+            $query->where('customer_id', $customerId);
+        })->get($columns);
     }
 
     /**
-     * Get payments by date range.
-     *
-     * @param string $startDate
-     * @param string $endDate
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getByDateRange($startDate, $endDate)
-    {
-        return $this->model->whereBetween('payment_date', [$startDate, $endDate])
-            ->with('invoice')
-            ->orderBy('payment_date')
-            ->get();
-    }
-
-    /**
-     * Get total payments by date range.
-     *
-     * @param string $startDate
-     * @param string $endDate
-     * @return float
-     */
-    public function getTotalByDateRange($startDate, $endDate)
-    {
-        return $this->model->whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('amount');
-    }
-
-    /**
-     * Create a payment and update invoice status if fully paid.
+     * Crear un pago y actualizar estado de la factura
      *
      * @param array $data
-     * @return Payment
+     * @return \Illuminate\Database\Eloquent\Model
      */
-    public function createAndUpdateInvoice(array $data)
+    public function createPaymentAndUpdateInvoice(array $data)
     {
         $payment = $this->create($data);
-        
-        // Update invoice status if fully paid
+
+        // Buscar la factura
         $invoice = $payment->invoice;
-        $totalPaid = $invoice->payments->sum('amount') + $payment->amount;
-        
-        if ($totalPaid >= $invoice->amount + $invoice->taxes) {
+
+        // Calcular el monto pagado total
+        $totalPaid = $invoice->payments()->where('status', 'completed')->sum('amount');
+
+        // Calcular el monto de notas de crédito aplicadas
+        $creditNoteAmount = $invoice->creditNotes()->where('status', 'applied')->sum('amount');
+
+        // Verificar si se ha pagado completamente o parcialmente
+        if ($totalPaid + $creditNoteAmount >= $invoice->total_amount) {
             $invoice->update(['status' => 'paid']);
+        } else if ($totalPaid + $creditNoteAmount > 0) {
+            $invoice->update(['status' => 'partial']);
         }
-        
+
         return $payment;
     }
 }

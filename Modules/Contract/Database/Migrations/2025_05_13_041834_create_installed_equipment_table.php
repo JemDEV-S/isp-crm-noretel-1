@@ -16,7 +16,7 @@ class CreateInstalledEquipmentTable extends Migration
         Schema::create('installed_equipment', function (Blueprint $table) {
             $table->id();
             $table->foreignId('installation_id')->constrained('installations')->onDelete('cascade');
-            $table->foreignId('equipment_id')->constrained('equipment');
+            $table->foreignId('equipment_id')->nullable();
             $table->string('serial')->nullable();
             $table->string('mac_address')->nullable();
             $table->string('status')->default('assigned');

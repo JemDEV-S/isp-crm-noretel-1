@@ -26,7 +26,7 @@ class StoreContractRequest extends FormRequest
         return [
             'customer_id' => 'required|exists:customers,id',
             'plan_id' => 'required|exists:plans,id',
-            'node_id' => 'required|exists:nodes,id',
+            'node_id' => 'nullable|exists:nodes,id',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
             'final_price' => 'required|numeric|min:0',

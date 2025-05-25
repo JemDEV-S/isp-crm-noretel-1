@@ -17,7 +17,7 @@ class CreateContractsTable extends Migration
             $table->id();
             $table->foreignId('customer_id')->constrained('customers');
             $table->foreignId('plan_id')->constrained('plans');
-            $table->foreignId('node_id')->constrained('nodes');
+            $table->foreignId('node_id')->constrained('nodes')->nullable();
             $table->timestamp('start_date');
             $table->timestamp('end_date')->nullable();
             $table->string('status')->default('pending_installation');

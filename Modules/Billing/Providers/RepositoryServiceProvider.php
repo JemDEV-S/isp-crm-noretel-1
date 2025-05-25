@@ -3,10 +3,12 @@
 namespace Modules\Billing\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Billing\Interfaces\InvoiceRepositoryInterface;
+use Modules\Billing\Interfaces\PaymentRepositoryInterface;
+use Modules\Billing\Interfaces\CreditNoteRepositoryInterface;
 use Modules\Billing\Repositories\InvoiceRepository;
 use Modules\Billing\Repositories\PaymentRepository;
-use Modules\Billing\Entities\Invoice;
-use Modules\Billing\Entities\Payment;
+use Modules\Billing\Repositories\CreditNoteRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -17,14 +19,9 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Registrar repositorios
-        $this->app->bind(InvoiceRepository::class, function ($app) {
-            return new InvoiceRepository(new Invoice());
-        });
-
-        $this->app->bind(PaymentRepository::class, function ($app) {
-            return new PaymentRepository(new Payment());
-        });
+        $this->app->bind(InvoiceRepositoryInterface::class, InvoiceRepository::class);
+        $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
+        $this->app->bind(CreditNoteRepositoryInterface::class, CreditNoteRepository::class);
     }
 
     /**
@@ -34,9 +31,6 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return [
-            InvoiceRepository::class,
-            PaymentRepository::class,
-        ];
+        return [];
     }
 }

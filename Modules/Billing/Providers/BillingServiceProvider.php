@@ -107,16 +107,6 @@ class BillingServiceProvider extends ServiceProvider
     }
 
     /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return [];
-    }
-    
-    /**
      * Register gates for the Billing module.
      *
      * @return void
@@ -157,9 +147,53 @@ class BillingServiceProvider extends ServiceProvider
             return $user->canCreateInModule('payments');
         });
 
+        Gate::define('edit-payments', function (User $user) {
+            return $user->canEditInModule('payments');
+        });
+
         Gate::define('delete-payments', function (User $user) {
             return $user->canDeleteInModule('payments');
         });
+
+        // Gates para gestionar notas de crédito
+        Gate::define('manage-credit-notes', function (User $user) {
+            return $user->hasPermission('manage', 'credit_notes');
+        });
+
+        Gate::define('view-credit-notes', function (User $user) {
+            return $user->canViewModule('credit_notes');
+        });
+
+        Gate::define('create-credit-notes', function (User $user) {
+            return $user->canCreateInModule('credit_notes');
+        });
+
+        Gate::define('edit-credit-notes', function (User $user) {
+            return $user->canEditInModule('credit_notes');
+        });
+
+        Gate::define('delete-credit-notes', function (User $user) {
+            return $user->canDeleteInModule('credit_notes');
+        });
+
+        // Gates para reportes financieros
+        Gate::define('manage-financial-reports', function (User $user) {
+            return $user->hasPermission('manage', 'financial_reports');
+        });
+
+        Gate::define('view-financial-reports', function (User $user) {
+            return $user->canViewModule('financial_reports');
+        });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [];
     }
 
     private function getPublishableViewPaths(): array

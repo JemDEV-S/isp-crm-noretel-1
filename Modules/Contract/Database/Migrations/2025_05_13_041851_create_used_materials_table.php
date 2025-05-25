@@ -16,7 +16,7 @@ class CreateUsedMaterialsTable extends Migration
         Schema::create('used_materials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('installation_id')->constrained('installations')->onDelete('cascade');
-            $table->foreignId('material_id')->constrained('materials');
+            $table->foreignId('material_id')->nullable();
             $table->integer('quantity');
             $table->timestamps();
         });

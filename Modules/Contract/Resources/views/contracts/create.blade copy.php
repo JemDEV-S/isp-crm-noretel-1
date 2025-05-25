@@ -11,49 +11,49 @@
         padding-bottom: 1rem;
         border-bottom: 1px solid var(--border-color);
     }
-
+    
     .form-section-title {
         margin-bottom: 1.5rem;
         color: var(--primary-color);
         font-weight: 600;
     }
-
+    
     .nav-tabs .nav-link.active {
         border-color: var(--primary-color);
         color: var(--primary-color);
         font-weight: 500;
     }
-
+    
     .additional-service-card {
         border-radius: 0.5rem;
         border: 1px solid #ddd;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
     }
-
+    
     .additional-service-card.selected {
         border-color: var(--primary-color);
         box-shadow: 0 0 0 1px var(--primary-color);
     }
-
+    
     .additional-service-card .card-header {
         cursor: pointer;
         padding: 0.75rem;
     }
-
+    
     .price-calculation-box {
         background-color: #f8f9fa;
         border-radius: 0.5rem;
         padding: 1rem;
         margin-top: 1rem;
     }
-
+    
     .price-row {
         display: flex;
         justify-content: space-between;
         margin-bottom: 0.5rem;
     }
-
+    
     .price-row.total {
         font-weight: bold;
         border-top: 1px solid #ddd;
@@ -71,11 +71,11 @@
             <i class="fas fa-arrow-left"></i> Volver
         </a>
     </div>
-
+    
     <div class="card-body">
         <form action="{{ route('contract.contracts.store') }}" method="POST" id="contractForm">
             @csrf
-
+            
             <ul class="nav nav-tabs mb-4" id="contractTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab" aria-controls="info-tab-pane" aria-selected="true">
@@ -93,7 +93,7 @@
                     </button>
                 </li>
             </ul>
-
+            
             <div class="tab-content" id="contractTabContent">
                 <!-- Pestaña de Información General -->
                 <div class="tab-pane fade show active" id="info-tab-pane" role="tabpanel" aria-labelledby="info-tab" tabindex="0">
@@ -107,7 +107,7 @@
                                     @if(isset($customer) && $customer)
                                         <option value="{{ $customer->id }}" selected>{{ $customer->first_name }} {{ $customer->last_name }} ({{ $customer->identity_document }})</option>
                                     @endif
-
+                                    
                                     @foreach($customers as $cust)
                                         @if(!isset($customer) || $customer->id != $cust->id)
                                             <option value="{{ $cust->id }}" {{ old('customer_id') == $cust->id ? 'selected' : '' }}>
@@ -123,7 +123,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="form-section">
                         <h6 class="form-section-title">Información del Plan</h6>
                         <div class="row mb-3">
@@ -142,7 +142,7 @@
                                 @enderror
                             </div>
                         </div>
-
+                        
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="start_date" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
@@ -162,13 +162,13 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Pestaña de Servicios Adicionales -->
                 <div class="tab-pane fade" id="services-tab-pane" role="tabpanel" aria-labelledby="services-tab" tabindex="0">
                     <div class="form-section">
                         <h6 class="form-section-title">Servicios Adicionales</h6>
                         <p>Selecciona los servicios adicionales que deseas incluir en el contrato:</p>
-
+                        
                         <div class="row">
                             @foreach($additionalServices as $service)
                             <div class="col-md-6 mb-3">
@@ -176,9 +176,9 @@
                                     <div class="card-header d-flex justify-content-between align-items-center" onclick="toggleService({{ $service->id }})">
                                         <h6 class="mb-0">{{ $service->name }}</h6>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input service-checkbox" type="checkbox"
-                                                   id="service_{{ $service->id }}"
-                                                   name="additional_services[{{ $service->id }}][selected]"
+                                            <input class="form-check-input service-checkbox" type="checkbox" 
+                                                   id="service_{{ $service->id }}" 
+                                                   name="additional_services[{{ $service->id }}][selected]" 
                                                    value="1"
                                                    data-price="{{ $service->price }}"
                                                    {{ old("additional_services.{$service->id}.selected") ? 'checked' : '' }}
@@ -189,22 +189,21 @@
                                         <p>{{ $service->description }}</p>
                                         <div class="form-group">
                                             <label for="service_price_{{ $service->id }}" class="form-label">Precio</label>
-                                            <input type="number" step="0.01" min="0"
-                                                   class="form-control service-price"
-                                                   id="service_price_{{ $service->id }}"
+                                            <input type="number" step="0.01" min="0" 
+                                                   class="form-control service-price" 
+                                                   id="service_price_{{ $service->id }}" 
                                                    name="additional_services[{{ $service->id }}][price]"
                                                    value="{{ old("additional_services.{$service->id}.price", $service->price) }}"
                                                    onchange="calculateTotalPrice()">
                                         </div>
-
+                                        
                                         @if($service->configurable)
                                         <div class="form-group mt-3">
                                             <label for="service_config_{{ $service->id }}" class="form-label">Configuración</label>
-                                            <textarea class="form-control"
-                                                      id="service_config_{{ $service->id }}"
+                                            <textarea class="form-control" 
+                                                      id="service_config_{{ $service->id }}" 
                                                       name="additional_services[{{ $service->id }}][configuration]"
                                                       rows="3">{{ old("additional_services.{$service->id}.configuration") }}</textarea>
-                                            <div class="form-text">Proporciona detalles adicionales sobre la configuración del servicio.</div>
                                         </div>
                                         @endif
                                     </div>
@@ -214,13 +213,28 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Pestaña de Información Técnica -->
                 <div class="tab-pane fade" id="technical-tab-pane" role="tabpanel" aria-labelledby="technical-tab" tabindex="0">
                     <div class="form-section">
                         <h6 class="form-section-title">Información de Nodo y Conexión</h6>
                         <div class="row mb-3">
-
+                            <!--
+                            <div class="col-md-6">
+                                <label for="node_id" class="form-label">Nodo <span class="text-danger">*</span></label>
+                                <select name="node_id" id="node_id" class="form-select @error('node_id') is-invalid @enderror" required>
+                                    <option value="">Seleccionar Nodo</option>
+                                    @foreach($nodes as $node)
+                                        <option value="{{ $node->id }}" {{ old('node_id') == $node->id ? 'selected' : '' }}>
+                                            {{ $node->name }} ({{ $node->used_capacity }}/{{ $node->total_capacity }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('node_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            -->
                             <div class="col-md-6">
                                 <label for="sla_id" class="form-label">Acuerdo de Nivel de Servicio (SLA)</label>
                                 <select name="sla_id" id="sla_id" class="form-select @error('sla_id') is-invalid @enderror">
@@ -236,7 +250,7 @@
                                 @enderror
                             </div>
                         </div>
-
+                        
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="assigned_ip" class="form-label">IP Asignada</label>
@@ -255,7 +269,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="form-section">
                         <h6 class="form-section-title">Información de Precio</h6>
                         <div class="row mb-3">
@@ -287,7 +301,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-secondary" id="prevBtn" onclick="navigateTab('prev')" disabled>
                     <i class="fas fa-arrow-left"></i> Anterior
@@ -310,7 +324,7 @@
 <script>
     let currentTab = 0;
     const tabs = ['info-tab', 'services-tab', 'technical-tab'];
-
+    
     document.addEventListener('DOMContentLoaded', function() {
         // Inicializar datepickers
         flatpickr(".datepicker", {
@@ -318,7 +332,7 @@
             dateFormat: "Y-m-d",
             allowInput: true
         });
-
+        
         // Inicializar select2 para búsqueda avanzada
         if (typeof $.fn.select2 !== 'undefined') {
             $('#customer_id').select2({
@@ -326,14 +340,14 @@
                 allowClear: true
             });
         }
-
+        
         // Calcular precio inicial
         calculateTotalPrice();
-
+        
         // Manejar cambio en el plan seleccionado
         document.getElementById('plan_id').addEventListener('change', calculateTotalPrice);
     });
-
+    
     function navigateTab(direction) {
         if (direction === 'next') {
             if (currentTab < tabs.length - 1) {
@@ -344,17 +358,17 @@
                 currentTab--;
             }
         }
-
+        
         // Activar la pestaña correspondiente
         document.getElementById(tabs[currentTab]).click();
-
+        
         // Actualizar estado de los botones
         updateButtons();
     }
-
+    
     function updateButtons() {
         document.getElementById('prevBtn').disabled = (currentTab === 0);
-
+        
         if (currentTab === tabs.length - 1) {
             document.getElementById('nextBtn').style.display = 'none';
             document.getElementById('submitBtn').style.display = 'block';
@@ -363,12 +377,12 @@
             document.getElementById('submitBtn').style.display = 'none';
         }
     }
-
+    
     function toggleService(serviceId) {
         const checkbox = document.getElementById(`service_${serviceId}`);
         const card = document.getElementById(`service-card-${serviceId}`);
         const body = document.getElementById(`service-body-${serviceId}`);
-
+        
         if (checkbox.checked) {
             card.classList.add('selected');
             body.style.display = 'block';
@@ -376,18 +390,18 @@
             card.classList.remove('selected');
             body.style.display = 'none';
         }
-
+        
         calculateTotalPrice();
     }
-
+    
     function calculateTotalPrice() {
         let totalPrice = 0;
         let additionalServicesHtml = '';
-
+        
         // Obtener precio del plan base
         const planSelect = document.getElementById('plan_id');
         const selectedPlan = planSelect.options[planSelect.selectedIndex];
-
+        
         if (selectedPlan && selectedPlan.value) {
             const planPrice = parseFloat(selectedPlan.getAttribute('data-price')) || 0;
             totalPrice += planPrice;
@@ -395,16 +409,16 @@
         } else {
             document.getElementById('base-plan-price').textContent = '$0.00';
         }
-
+        
         // Calcular precios de servicios adicionales
         const serviceCheckboxes = document.querySelectorAll('.service-checkbox:checked');
         serviceCheckboxes.forEach(checkbox => {
             const serviceId = checkbox.id.replace('service_', '');
             const priceInput = document.getElementById(`service_price_${serviceId}`);
             const price = parseFloat(priceInput.value) || 0;
-
+            
             totalPrice += price;
-
+            
             const serviceName = document.querySelector(`#service-card-${serviceId} .card-header h6`).textContent;
             additionalServicesHtml += `
                 <div class="price-row">
@@ -413,21 +427,21 @@
                 </div>
             `;
         });
-
+        
         // Actualizar HTML con los servicios adicionales
         document.getElementById('additional-services-prices').innerHTML = additionalServicesHtml;
-
+        
         // Actualizar precio total
         document.getElementById('total-price').textContent = `$${totalPrice.toFixed(2)}`;
     }
-
+    
     function applyCalculatedPrice() {
         const totalPriceText = document.getElementById('total-price').textContent;
         const totalPrice = parseFloat(totalPriceText.replace('$', '')) || 0;
-
+        
         document.getElementById('final_price').value = totalPrice.toFixed(2);
     }
-
+    
     // Event listeners para las pestañas
     tabs.forEach((tabId, index) => {
         document.getElementById(tabId).addEventListener('shown.bs.tab', function (e) {

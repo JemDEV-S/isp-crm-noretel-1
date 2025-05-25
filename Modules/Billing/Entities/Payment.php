@@ -4,18 +4,12 @@ namespace Modules\Billing\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use OwenIt\Auditing\Contracts\Auditable;
-use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\Core\Entities\User;
 
-class Payment extends Model implements Auditable
+class Payment extends Model
 {
-    use HasFactory, AuditableTrait;
+    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'invoice_id',
         'amount',
@@ -23,23 +17,41 @@ class Payment extends Model implements Auditable
         'payment_method',
         'status',
         'reference',
+        'transaction_id',
+        'payment_gateway',
+        'payment_details',
+        'notes',
+        'user_id'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
+        'payment_date' => 'date',
         'amount' => 'decimal:2',
-        'payment_date' => 'datetime',
+        'payment_details' => 'json'
     ];
 
     /**
-     * Get the invoice that owns the payment.
+     * Relación con factura
      */
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * Relación con usuario que registró el pago
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Obtener nombre del método de pago desde la configuración
+     */
+    public function getPaymentMethodNameAttribute()
+    {
+        $methods = config('billing.payment.methods');
+        return $methods[$this->payment_method] ?? $this->payment_method;
     }
 }

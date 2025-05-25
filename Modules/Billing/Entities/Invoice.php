@@ -5,43 +5,48 @@ namespace Modules\Billing\Entities;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Contract\Entities\Contract;
-use OwenIt\Auditing\Contracts\Auditable;
-use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\Core\Entities\User;
 
-class Invoice extends Model implements Auditable
+class Invoice extends Model
 {
-    use HasFactory, AuditableTrait;
+    use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'contract_id',
         'invoice_number',
         'amount',
         'taxes',
+        'total_amount',
         'issue_date',
         'due_date',
         'status',
         'document_type',
+        'notes',
+        'sent',
+        'sent_at',
+        'billing_name',
+        'billing_address',
+        'billing_document',
+        'billing_email',
+        'payment_reference',
+        'services_detail',
+        'generation_type',
+        'billing_period'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
+        'issue_date' => 'date',
+        'due_date' => 'date',
+        'sent_at' => 'datetime',
+        'services_detail' => 'json',
         'amount' => 'decimal:2',
         'taxes' => 'decimal:2',
-        'issue_date' => 'datetime',
-        'due_date' => 'datetime',
+        'total_amount' => 'decimal:2',
+        'sent' => 'boolean'
     ];
 
     /**
-     * Get the contract that owns the invoice.
+     * Relación con contrato
      */
     public function contract()
     {
@@ -49,7 +54,7 @@ class Invoice extends Model implements Auditable
     }
 
     /**
-     * Get the payments for the invoice.
+     * Relación con pagos
      */
     public function payments()
     {
@@ -57,54 +62,79 @@ class Invoice extends Model implements Auditable
     }
 
     /**
-     * Get the total amount of the invoice.
+     * Relación con ítems de factura
      */
-    public function getTotalAttribute()
+    public function items()
     {
-        return $this->amount + $this->taxes;
+        return $this->hasMany(InvoiceItem::class);
     }
 
     /**
-     * Get the paid amount of the invoice.
+     * Relación con notas de crédito
+     */
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    /**
+     * Relación con recordatorios de pago
+     */
+    public function reminders()
+    {
+        return $this->hasMany(PaymentReminder::class);
+    }
+
+    /**
+     * Obtener el cliente asociado a través del contrato
+     */
+    public function customer()
+    {
+        return $this->contract->customer();
+    }
+
+    /**
+     * Verificar si la factura está vencida
+     */
+    public function isOverdue()
+    {
+        return $this->status === 'pending' && now()->gt($this->due_date);
+    }
+
+    /**
+     * Calcular cuántos días faltan para vencimiento
+     */
+    public function daysUntilDue()
+    {
+        return now()->diffInDays($this->due_date, false);
+    }
+
+    /**
+     * Calcular cuántos días está vencida
+     */
+    public function daysOverdue()
+    {
+        if ($this->isOverdue()) {
+            return now()->diffInDays($this->due_date);
+        }
+        return 0;
+    }
+
+    /**
+     * Calcular monto pagado
      */
     public function getPaidAmountAttribute()
     {
-        return $this->payments->sum('amount');
+        return $this->payments()->where('status', 'completed')->sum('amount');
     }
 
     /**
-     * Get the remaining amount to be paid.
+     * Calcular saldo pendiente
      */
-    public function getRemainingAmountAttribute()
+    public function getPendingAmountAttribute()
     {
-        return $this->total - $this->paid_amount;
-    }
-
-    /**
-     * Check if the invoice is fully paid.
-     */
-    public function getIsPaidAttribute()
-    {
-        return $this->remaining_amount <= 0;
-    }
-
-    /**
-     * Check if the invoice is overdue.
-     */
-    public function getIsOverdueAttribute()
-    {
-        return $this->due_date && $this->due_date->isPast() && !$this->is_paid;
-    }
-
-    /**
-     * Calculate the number of days overdue.
-     */
-    public function getDaysOverdueAttribute()
-    {
-        if (!$this->is_overdue) {
-            return 0;
-        }
-        
-        return $this->due_date->diffInDays(now());
+        $paidAmount = $this->paid_amount;
+        $creditNoteAmount = $this->creditNotes()->where('status', 'applied')->sum('amount');
+        return $this->total_amount - $paidAmount - $creditNoteAmount;
     }
 }

@@ -6,12 +6,12 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Billing\Repositories\InvoiceRepository;
-use Modules\Billing\Repositories\PaymentRepository;
+use Modules\Billing\Services\InvoiceService;
 use Modules\Contract\Repositories\ContractRepository;
 use Modules\Core\Entities\AuditLog;
+use Carbon\Carbon;
 use Modules\Billing\Http\Requests\StoreInvoiceRequest;
 use Modules\Billing\Http\Requests\UpdateInvoiceRequest;
-use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
@@ -21,9 +21,9 @@ class InvoiceController extends Controller
     protected $invoiceRepository;
 
     /**
-     * @var PaymentRepository
+     * @var InvoiceService
      */
-    protected $paymentRepository;
+    protected $invoiceService;
 
     /**
      * @var ContractRepository
@@ -34,16 +34,16 @@ class InvoiceController extends Controller
      * InvoiceController constructor.
      *
      * @param InvoiceRepository $invoiceRepository
-     * @param PaymentRepository $paymentRepository
+     * @param InvoiceService $invoiceService
      * @param ContractRepository $contractRepository
      */
     public function __construct(
         InvoiceRepository $invoiceRepository,
-        PaymentRepository $paymentRepository,
+        InvoiceService $invoiceService,
         ContractRepository $contractRepository
     ) {
         $this->invoiceRepository = $invoiceRepository;
-        $this->paymentRepository = $paymentRepository;
+        $this->invoiceService = $invoiceService;
         $this->contractRepository = $contractRepository;
     }
 
@@ -55,67 +55,66 @@ class InvoiceController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status');
-        $contractId = $request->get('contract_id');
+        $from = $request->get('from');
+        $to = $request->get('to');
         $perPage = $request->get('per_page', 10);
 
         $query = $this->invoiceRepository->query();
 
-        // Apply filters
         if ($search) {
-            $query->where('invoice_number', 'like', "%{$search}%")
-                ->orWhereHas('contract.customer', function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('identity_document', 'like', "%{$search}%");
-                });
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('billing_name', 'like', "%{$search}%");
+            });
         }
 
         if ($status) {
             $query->where('status', $status);
         }
 
-        if ($contractId) {
-            $query->where('contract_id', $contractId);
+        if ($from) {
+            $query->where('issue_date', '>=', $from);
         }
 
-        // With relationships
-        $query->with(['contract.customer']);
+        if ($to) {
+            $query->where('issue_date', '<=', $to);
+        }
 
-        // Order by issue date
-        $query->orderBy('issue_date', 'desc');
+        $invoices = $query->orderBy('issue_date', 'desc')->paginate($perPage);
 
-        $invoices = $query->paginate($perPage);
+        $statuses = [
+            'draft' => 'Borrador',
+            'pending' => 'Pendiente',
+            'paid' => 'Pagada',
+            'partial' => 'Pago Parcial',
+            'overdue' => 'Vencida',
+            'cancelled' => 'Cancelada',
+            'void' => 'Anulada'
+        ];
 
-        return view('billing::invoices.index', compact(
-            'invoices', 
-            'search', 
-            'status', 
-            'contractId'
-        ));
+        return view('billing::invoices.index', compact('invoices', 'search', 'status', 'from', 'to', 'statuses'));
     }
 
     /**
      * Show the form for creating a new resource.
      * @return Renderable
      */
-    public function create(Request $request)
+    public function create()
     {
-        $contractId = $request->get('contract_id');
-        $contract = null;
+        // Obtener contratos activos para el dropdown
+        $contracts = $this->contractRepository->getActiveContracts();
 
-        if ($contractId) {
-            $contract = $this->contractRepository->find($contractId);
-        }
+        // Generar número de factura sugerido
+        $invoiceNumber = $this->invoiceRepository->generateInvoiceNumber();
 
-        $activeContracts = $this->contractRepository->query()
-            ->where('status', 'active')
-            ->with('customer')
-            ->get();
+        // Fecha de emisión por defecto (hoy)
+        $issueDate = Carbon::now()->format('Y-m-d');
 
-        return view('billing::invoices.create', compact(
-            'contract',
-            'activeContracts'
-        ));
+        // Fecha de vencimiento por defecto (configuración)
+        $dueDays = config('billing.invoice.due_days', 15);
+        $dueDate = Carbon::now()->addDays($dueDays)->format('Y-m-d');
+
+        return view('billing::invoices.create', compact('contracts', 'invoiceNumber', 'issueDate', 'dueDate'));
     }
 
     /**
@@ -123,44 +122,17 @@ class InvoiceController extends Controller
      * @param StoreInvoiceRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreInvoiceRequest $request)
     {
-        // Validación básica
-        $request->validate([
-            'contract_id' => 'required|exists:contracts,id',
-            'amount' => 'required|numeric|min:0',
-            'taxes' => 'nullable|numeric|min:0',
-            'issue_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:issue_date',
-            'document_type' => 'nullable|string'
-        ]);
+        $data = $request->validated();
 
-        // Preparar datos
-        $data = $request->all();
-        
-        // Generar factura con número único
-        $invoice = $this->invoiceRepository->createWithNumber([
-            'contract_id' => $data['contract_id'],
-            'amount' => $data['amount'],
-            'taxes' => $data['taxes'] ?? 0,
-            'issue_date' => $data['issue_date'],
-            'due_date' => $data['due_date'],
-            'status' => 'pending',
-            'document_type' => $data['document_type'] ?? 'invoice'
-        ]);
-        
-        // Registrar acción para auditoría
-        AuditLog::register(
-            Auth::id(),
-            'invoice_created',
-            'invoices',
-            "Factura {$invoice->invoice_number} creada para el contrato #{$invoice->contract_id}",
-            $request->ip(),
-            null,
-            $invoice->toArray()
-        );
-        
-        return redirect()->route('billing.invoices.show', $invoice->id)
+        $result = $this->invoiceService->createInvoice($data);
+
+        if (!$result['success']) {
+            return redirect()->back()->withInput()->with('error', $result['message']);
+        }
+
+        return redirect()->route('billing.invoices.show', $result['invoice']->id)
             ->with('success', 'Factura creada correctamente.');
     }
 
@@ -171,9 +143,18 @@ class InvoiceController extends Controller
      */
     public function show($id)
     {
-        $invoice = $this->invoiceRepository->getWithRelations($id);
-        
-        return view('billing::invoices.show', compact('invoice'));
+        $invoice = $this->invoiceRepository->find($id);
+
+        // Cargar relaciones
+        $invoice->load(['contract.customer', 'items', 'payments', 'creditNotes']);
+
+        // Obtener logs de auditoría relacionados con esta factura
+        $logs = AuditLog::where('action_detail', 'like', "%{$invoice->invoice_number}%")
+            ->orderBy('action_date', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('billing::invoices.show', compact('invoice', 'logs'));
     }
 
     /**
@@ -183,9 +164,21 @@ class InvoiceController extends Controller
      */
     public function edit($id)
     {
-        $invoice = $this->invoiceRepository->getWithRelations($id);
-        
-        return view('billing::invoices.edit', compact('invoice'));
+        $invoice = $this->invoiceRepository->find($id);
+
+        // Solo se pueden editar facturas en borrador
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('billing.invoices.show', $id)
+                ->with('error', 'Solo se pueden editar facturas en estado de borrador.');
+        }
+
+        // Cargar relaciones
+        $invoice->load(['contract.customer', 'items']);
+
+        // Obtener contratos activos para el dropdown
+        $contracts = $this->contractRepository->getActiveContracts();
+
+        return view('billing::invoices.edit', compact('invoice', 'contracts'));
     }
 
     /**
@@ -194,49 +187,54 @@ class InvoiceController extends Controller
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(UpdateInvoiceRequest $request, $id)
     {
-        // Validación básica
-        $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'taxes' => 'nullable|numeric|min:0',
-            'issue_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:issue_date',
-            'document_type' => 'nullable|string'
+        $invoice = $this->invoiceRepository->find($id);
+
+        // Solo se pueden editar facturas en borrador
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('billing.invoices.show', $id)
+                ->with('error', 'Solo se pueden editar facturas en estado de borrador.');
+        }
+
+        $data = $request->validated();
+
+        // Eliminar items actuales
+        $invoice->items()->delete();
+
+        // Actualizar factura
+        $invoice->update($data);
+
+        // Crear nuevos items
+        if (isset($data['items'])) {
+            foreach ($data['items'] as $item) {
+                $item['invoice_id'] = $id;
+                $invoice->items()->create($item);
+            }
+        }
+
+        // Actualizar totales
+        $subtotal = $invoice->items()->sum('amount');
+        $taxes = $invoice->items()->sum('tax_amount');
+
+        $invoice->update([
+            'amount' => $subtotal - $taxes,
+            'taxes' => $taxes,
+            'total_amount' => $subtotal
         ]);
 
-        $invoice = $this->invoiceRepository->find($id);
-        
-        // No permitir editar facturas pagadas o canceladas
-        if (in_array($invoice->status, ['paid', 'cancelled'])) {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'No se pueden editar facturas pagadas o canceladas.');
-        }
-        
-        // Guardar datos antiguos para auditoría
-        $oldData = $invoice->toArray();
-        
-        // Actualizar factura
-        $invoice = $this->invoiceRepository->update($id, [
-            'amount' => $request->amount,
-            'taxes' => $request->taxes ?? 0,
-            'issue_date' => $request->issue_date,
-            'due_date' => $request->due_date,
-            'document_type' => $request->document_type ?? 'invoice'
-        ]);
-        
-        // Registrar acción para auditoría
+        // Registrar en log de auditoría
         AuditLog::register(
-            Auth::id(),
+            auth()->id(),
             'invoice_updated',
             'invoices',
-            "Factura {$invoice->invoice_number} actualizada",
-            $request->ip(),
-            $oldData,
+            "Factura actualizada: {$invoice->invoice_number}",
+            request()->ip(),
+            null,
             $invoice->toArray()
         );
-        
-        return redirect()->route('billing.invoices.show', $invoice->id)
+
+        return redirect()->route('billing.invoices.show', $id)
             ->with('success', 'Factura actualizada correctamente.');
     }
 
@@ -245,140 +243,140 @@ class InvoiceController extends Controller
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id, Request $request)
+    public function destroy($id)
     {
         $invoice = $this->invoiceRepository->find($id);
-        
-        // No permitir eliminar facturas con pagos
-        if ($invoice->payments->count() > 0) {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'No se puede eliminar una factura que tiene pagos registrados.');
+
+        // Solo se pueden eliminar facturas en borrador
+        if ($invoice->status !== 'draft') {
+            return redirect()->route('billing.invoices.index')
+                ->with('error', 'Solo se pueden eliminar facturas en estado de borrador.');
         }
-        
-        // Guardar datos para auditoría
-        $invoiceData = $invoice->toArray();
-        
-        // Eliminar factura
-        $this->invoiceRepository->delete($id);
-        
-        // Registrar acción para auditoría
+
+        // Registrar en log de auditoría
         AuditLog::register(
-            Auth::id(),
+            auth()->id(),
             'invoice_deleted',
             'invoices',
-            "Factura {$invoice->invoice_number} eliminada",
-            $request->ip(),
-            $invoiceData,
+            "Factura eliminada: {$invoice->invoice_number}",
+            request()->ip(),
+            $invoice->toArray(),
             null
         );
-        
+
+        // Eliminar factura
+        $this->invoiceRepository->delete($id);
+
         return redirect()->route('billing.invoices.index')
             ->with('success', 'Factura eliminada correctamente.');
     }
 
     /**
-     * Mark invoice as paid.
+     * Void the specified invoice.
+     * @param Request $request
      * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function void(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $result = $this->invoiceService->voidInvoice($id, $request->reason);
+
+        if (!$result['success']) {
+            return redirect()->route('billing.invoices.show', $id)
+                ->with('error', $result['message']);
+        }
+
+        return redirect()->route('billing.invoices.show', $id)
+            ->with('success', 'Factura anulada correctamente.');
+    }
+
+    /**
+     * Mark the invoice as sent.
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function markAsSent($id)
+    {
+        $result = $this->invoiceService->markAsSent($id);
+
+        if (!$result['success']) {
+            return redirect()->route('billing.invoices.show', $id)
+                ->with('error', $result['message']);
+        }
+
+        return redirect()->route('billing.invoices.show', $id)
+            ->with('success', 'Factura marcada como enviada.');
+    }
+
+    /**
+     * Generate an invoice for a contract.
      * @param Request $request
      * @return \Illuminate\Http\Response
      */
-    public function markAsPaid($id, Request $request)
+    public function generateForContract(Request $request)
     {
-        $invoice = $this->invoiceRepository->find($id);
-        
-        // No permitir marcar como pagada si ya está pagada o cancelada
-        if ($invoice->status === 'paid') {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'La factura ya está marcada como pagada.');
-        }
-        
-        if ($invoice->status === 'cancelled') {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'No se puede marcar como pagada una factura cancelada.');
-        }
-        
-        // Guardar datos antiguos para auditoría
-        $oldData = $invoice->toArray();
-        
-        // Marcar como pagada
-        $this->invoiceRepository->markAsPaid($id);
-        
-        // Registrar acción para auditoría
-        AuditLog::register(
-            Auth::id(),
-            'invoice_marked_as_paid',
-            'invoices',
-            "Factura {$invoice->invoice_number} marcada como pagada",
-            $request->ip(),
-            $oldData,
-            $invoice->fresh()->toArray()
+        $request->validate([
+            'contract_id' => 'required|exists:contracts,id',
+            'billing_period' => 'required|string|max:255',
+        ]);
+
+        $result = $this->invoiceService->generateInvoiceForContract(
+            $request->contract_id,
+            $request->billing_period
         );
-        
-        return redirect()->route('billing.invoices.show', $invoice->id)
-            ->with('success', 'Factura marcada como pagada correctamente.');
+
+        if (!$result['success']) {
+            return redirect()->route('billing.invoices.index')
+                ->with('error', $result['message']);
+        }
+
+        return redirect()->route('billing.invoices.show', $result['invoice']->id)
+            ->with('success', 'Factura generada correctamente.');
     }
 
     /**
-     * Mark invoice as cancelled.
+     * Print the invoice as PDF.
      * @param int $id
-     * @param Request $request
      * @return \Illuminate\Http\Response
      */
-    public function markAsCancelled($id, Request $request)
+    public function print($id)
     {
         $invoice = $this->invoiceRepository->find($id);
-        
-        // No permitir cancelar si ya está pagada o cancelada
-        if ($invoice->status === 'cancelled') {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'La factura ya está cancelada.');
-        }
-        
-        if ($invoice->status === 'paid') {
-            return redirect()->route('billing.invoices.show', $invoice->id)
-                ->with('error', 'No se puede cancelar una factura pagada.');
-        }
-        
-        // Guardar datos antiguos para auditoría
-        $oldData = $invoice->toArray();
-        
-        // Marcar como cancelada
-        $this->invoiceRepository->markAsCancelled($id);
-        
-        // Registrar acción para auditoría
-        AuditLog::register(
-            Auth::id(),
-            'invoice_cancelled',
-            'invoices',
-            "Factura {$invoice->invoice_number} cancelada",
-            $request->ip(),
-            $oldData,
-            $invoice->fresh()->toArray()
-        );
-        
-        return redirect()->route('billing.invoices.show', $invoice->id)
-            ->with('success', 'Factura cancelada correctamente.');
+
+        // Cargar relaciones
+        $invoice->load(['contract.customer', 'items', 'payments']);
+
+        // Aquí implementarías la generación del PDF con alguna librería como DOMPDF
+        // Por ahora, solo mostraremos una vista simplificada
+
+        return view('billing::invoices.print', compact('invoice'));
     }
 
     /**
-     * Display overdue invoices.
-     * @return Renderable
+     * Email the invoice to the customer.
+     * @param int $id
+     * @return \Illuminate\Http\Response
      */
-    public function overdue()
+    public function email($id)
     {
-        $overdue = $this->invoiceRepository->getOverdueInvoices();
-        
-        return view('billing::invoices.overdue', compact('overdue'));
-    }
+        $invoice = $this->invoiceRepository->find($id);
 
-    /**
-     * Display pending invoices.
-     * @return Renderable
-     */
-    public function pending()
-    {
-        $pending = $this->invoiceRepository->getPendingInvoices();
-        
-        return view('billing::invoices.pending', compact('pending'));
+        // Aquí implementarías el envío por email
+        // Esto podría ser parte de un servicio de notificaciones
+
+        // Por ahora, simplemente marcamos como enviada y retornamos
+        $result = $this->invoiceService->markAsSent($id);
+
+        if (!$result['success']) {
+            return redirect()->route('billing.invoices.show', $id)
+                ->with('error', 'Error al enviar la factura por email.');
+        }
+
+        return redirect()->route('billing.invoices.show', $id)
+            ->with('success', 'Factura enviada por email correctamente.');
     }
 }

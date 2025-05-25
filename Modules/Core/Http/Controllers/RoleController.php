@@ -339,6 +339,89 @@ class RoleController extends Controller
         // o ser detectado dinámicamente a partir de las clases del sistema
 
         return [
+            //___________Billing Modules___________
+            'billing' => [
+                'name' => 'Facturación',
+                'actions' => [
+                    'view' => 'Ver facturas',
+                    'create' => 'Crear facturas',
+                    'edit' => 'Editar facturas',
+                    'delete' => 'Eliminar facturas',
+                    'manage' => 'Gestionar facturas (todos los permisos)'
+                ]
+            ],
+            'invoices' => [
+                'name' => 'Facturas',
+                'actions' => [
+                    'view' => 'Ver facturas',
+                    'create' => 'Crear facturas',
+                    'edit' => 'Editar facturas',
+                    'delete' => 'Eliminar facturas',
+                    'manage' => 'Gestionar facturas (todos los permisos)'
+                ]
+            ],
+            'payments' => [
+                'name' => 'Pagos',
+                'actions' => [
+                    'view' => 'Ver pagos',
+                    'create' => 'Crear pagos',
+                    'edit' => 'Editar pagos',
+                    'delete' => 'Eliminar pagos',
+                    'manage' => 'Gestionar pagos (todos los permisos)'
+                ]
+            ],
+            'credit-notes' => [
+                'name' => 'Notas de Crédito',
+                'actions' => [
+                    'view' => 'Ver notas de crédito',
+                    'create' => 'Crear notas de crédito',
+                    'edit' => 'Editar notas de crédito',
+                    'delete' => 'Eliminar notas de crédito',
+                    'manage' => 'Gestionar notas de crédito (todos los permisos)'
+                ]
+            ],
+            //___________Contract Modules___________
+            'contracts' => [
+                'name' => 'Contratos',
+                'actions' => [
+                    'view' => 'Ver contratos',
+                    'create' => 'Crear contratos',
+                    'edit' => 'Editar contratos',
+                    'delete' => 'Eliminar contratos',
+                    'manage' => 'Gestionar contratos (todos los permisos)'
+                ]
+            ],
+            'installations' => [
+                'name' => 'Instalaciones',
+                'actions' => [
+                    'view' => 'Ver instalaciones',
+                    'create' => 'Crear instalaciones',
+                    'edit' => 'Editar instalaciones',
+                    'delete' => 'Eliminar instalaciones',
+                    'manage' => 'Gestionar instalaciones (todos los permisos)'
+                ]
+            ],
+            'routes' => [
+                'name' => 'Rutas de Instalación',
+                'actions' => [
+                    'view' => 'Ver rutas de instalación',
+                    'create' => 'Crear rutas de instalación',
+                    'edit' => 'Editar rutas de instalación',
+                    'delete' => 'Eliminar rutas de instalación',
+                    'manage' => 'Gestionar rutas de instalación (todos los permisos)'
+                ]
+            ],
+            'slas' => [
+                'name' => 'SLA',
+                'actions' => [
+                    'view' => 'Ver SLA',
+                    'create' => 'Crear SLA',
+                    'edit' => 'Editar SLA',
+                    'delete' => 'Eliminar SLA',
+                    'manage' => 'Gestionar SLA (todos los permisos)'
+                ]
+            ],
+
             //___________Services Modules___________
             'services' => [
                 'name' => 'Servicios',
